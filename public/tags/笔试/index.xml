@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>笔试 on withdong02</title>
+    <link>http://localhost:1313/tags/%E7%AC%94%E8%AF%95/</link>
+    <description>Recent content in 笔试 on withdong02</description>
+    <image>
+      <title>withdong02</title>
+      <url>http://localhost:1313/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>http://localhost:1313/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sun, 29 Mar 2026 13:38:33 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/%E7%AC%94%E8%AF%95/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>笔试收获</title>
+      <link>http://localhost:1313/posts/%E7%AC%94%E8%AF%95%E6%94%B6%E8%8E%B7/</link>
+      <pubDate>Sun, 29 Mar 2026 13:38:33 +0000</pubDate>
+      <guid>http://localhost:1313/posts/%E7%AC%94%E8%AF%95%E6%94%B6%E8%8E%B7/</guid>
+      <description>&lt;p&gt;参加了一次笔试，收获颇多。&lt;/p&gt;
+&lt;h2 id=&#34;不同的输入方法&#34;&gt;不同的输入方法&lt;/h2&gt;
+&lt;p&gt;和力扣不一样，一些大厂的笔试包括面试时的算法题都是 ACM 模式，也就是需要自己处理输入，然后对输入处理并输出，而力扣是核心代码模式，不用你管输入，只需要实现指定方法，平台自会调用你的方法。在参加之前，我去卡码网上了解了一下，发现还是 &lt;code&gt;Scanner&lt;/code&gt; 那一套，也就没在意，但当我真正开始做的时候感到有点不对，&lt;code&gt;Scanner&lt;/code&gt; 恐怕不太够用。这篇博客主要讲一下 &lt;strong&gt;Java 里的输入流。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Java 的输入体系建立在 &lt;strong&gt;流&lt;/strong&gt; 的概念之上，主要有两个抽象基类：&lt;code&gt;InputStream&lt;/code&gt; 和 &lt;code&gt;Reader&lt;/code&gt; ，前者为字节流，处理原始字节数据，如图片、音频等；后者为字符流，处理字符数据，如文本文件、控制台输入等。两者之间通过 &lt;code&gt;InputStreamReader&lt;/code&gt; 作为桥梁，将字节流转换为字符流。&lt;/p&gt;
+&lt;h3 id=&#34;inputstream-字节流&#34;&gt;InputStream 字节流&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;InputStream&lt;/code&gt; 类定义了所有字节输入流必须实现的核心办法。包括 &lt;code&gt;int read()&lt;/code&gt; , &lt;code&gt;int read(byte[] b)&lt;/code&gt; , &lt;code&gt;void close()&lt;/code&gt;等方法。&lt;/p&gt;
+&lt;p&gt;Java 的 IO 体系采用了装饰器模式，意味着可以通过组合不同的流来实现复杂的功能。这里将 &lt;code&gt;InputStream&lt;/code&gt; 的子类大致分为两类。&lt;/p&gt;
+&lt;p&gt;第一种，这种类直接与特定的数据源进行交互，比如 &lt;code&gt;FileInputStream&lt;/code&gt; &lt;code&gt;ByteArrayInputStream&lt;/code&gt; 。&lt;/p&gt;
+&lt;p&gt;第二种，这种类不直接连接数据源，而是通过继承装饰器基类 &lt;code&gt;FilterInputStream&lt;/code&gt; 来包装一个已存在的 &lt;code&gt;InputStream&lt;/code&gt; ，给它提供一些额外的功能，比如缓冲、数据类型转换等。这种类的典型代表有 &lt;code&gt;BufferedInputStream&lt;/code&gt; &lt;code&gt;DataInputStream&lt;/code&gt; 等。&lt;/p&gt;
+&lt;h3 id=&#34;reader-字符流&#34;&gt;Reader 字符流&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;Reader&lt;/code&gt; 类是字符输入流的抽象基类，定义的方法有 &lt;code&gt;int read()&lt;/code&gt; , &lt;code&gt;int read(char[] cbuf)&lt;/code&gt; , &lt;code&gt;void close()&lt;/code&gt; 等。&lt;/p&gt;
+&lt;p&gt;它的子类和 &lt;code&gt;InputStream&lt;/code&gt; 一样，也分两种，这里不再多说。但它有一个特别的子类： &lt;code&gt;InputStreamReader&lt;/code&gt; 从它的类名就能看出来，它是字节流到字符流的单向桥梁，它可以读取字节，然后根据指定的字符编码将其解码为字符。&lt;/p&gt;
+&lt;h3 id=&#34;systemin&#34;&gt;System.in&lt;/h3&gt;
+&lt;p&gt;它是 &lt;code&gt;System&lt;/code&gt; 类里的一个静态变量，类型是 &lt;code&gt;InputStream&lt;/code&gt; ，所以它是一个字节流。如果需要按字符或行读取，通常需要对其包装，比如刚才提到的 &lt;code&gt;InputStreamReader&lt;/code&gt; 和常见的 &lt;code&gt;Scanner&lt;/code&gt;。通常情况下，&lt;code&gt;System.in&lt;/code&gt; 默认连接到控制台（键盘），同时它读取数据也是阻塞式的，程序会一直等待，直到有数据可读或者流被关闭。&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

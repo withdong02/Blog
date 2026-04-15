@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>BUG on withdong02</title>
+    <link>http://localhost:1313/tags/bug/</link>
+    <description>Recent content in BUG on withdong02</description>
+    <image>
+      <title>withdong02</title>
+      <url>http://localhost:1313/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>http://localhost:1313/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sat, 02 Aug 2025 11:16:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/bug/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>遇到的奇葩BUG</title>
+      <link>http://localhost:1313/posts/%E9%81%87%E5%88%B0%E7%9A%84%E5%A5%87%E8%91%A9bug/</link>
+      <pubDate>Sat, 02 Aug 2025 11:16:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/%E9%81%87%E5%88%B0%E7%9A%84%E5%A5%87%E8%91%A9bug/</guid>
+      <description>&lt;p&gt;此篇博客记录我学习过程中遇到的奇葩BUG&lt;/p&gt;
+&lt;h2 id=&#34;springboot项目启动失败&#34;&gt;&lt;code&gt;SpringBoot&lt;/code&gt;项目启动失败&lt;/h2&gt;
+&lt;p&gt;&lt;img alt=&#34;image-20250801212248493&#34; loading=&#34;lazy&#34; src=&#34;https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/image-20250801212248493.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;如上图，&lt;code&gt;SpringBoot&lt;/code&gt;项目启动失败。&lt;/p&gt;
+&lt;p&gt;虽然说是端口占用，但我执行相关命令后没有任何输出，修改启动端口不行，尝试了很多办法都未成功，那只好使出我的终极大招：重启idea。还是不行。幸好我还有终极终极大招：重启电脑。嘿，你猜怎么着，成了！🤣&lt;/p&gt;
+&lt;h2 id=&#34;接口测试报错getaddrinfo-enotfound-https&#34;&gt;接口测试报错&lt;code&gt;getaddrinfo ENOTFOUND https&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;img alt=&#34;image-20250827154544934&#34; loading=&#34;lazy&#34; src=&#34;https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/image-20250827154544934.png&#34;&gt;&lt;/p&gt;
+&lt;p&gt;一次简单的接口测试，出现报错&lt;code&gt;getaddrinfo ENOTFOUND https&lt;/code&gt;，搜索后得到答案：这通常意味着应用程序无法解析主机名或域名。这可能是由于DNS配置问题、网络连接问题或拼写错误等原因导致的。前两个果断排除，开始以为参数错，但一想那不应该试着错误，后来想可能域名错，但也没找到错误。最后发现是&lt;code&gt;https:&lt;/code&gt;后面多了个空格。😑&lt;/p&gt;
+&lt;h2 id=&#34;mysql容器连接报错&#34;&gt;mysql容器连接报错&lt;/h2&gt;
+&lt;p&gt;情况描述：本机为windows系统，装有wsl。在配置一个项目时使用&lt;code&gt;docker-compose&lt;/code&gt;命令构建项目所需容器。构建好容器后，我测试mysql是否连接成功，结果出现报错&lt;code&gt;2013 - Lost connection to server at &#39;handshake: reading initial communication packet&#39;, system error: 0&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;于是到网上搜索解决方案，有注释掉&lt;code&gt;bind-address = 127.0.0.1&lt;/code&gt;的，有添加配置&lt;code&gt;skip-name-resolve&lt;/code&gt;的，还有换系统的，但都无法解决我的问题。直到看见这篇博客&lt;a href=&#34;https://blog.csdn.net/liudongyang123/article/details/108381944&#34;&gt;CSDN博客&lt;/a&gt;。于是我直接修改&lt;code&gt;docker-compose.yaml&lt;/code&gt;文件，添加&lt;code&gt;network_mode: host&lt;/code&gt;，同时从豆包处得知：使用 &lt;code&gt;host&lt;/code&gt; 网络模式后，容器会直接使用宿主机的网络栈，因此 &lt;code&gt;ports&lt;/code&gt; 配置会被忽略。如果需要 MySQL 监听 3307 端口，需在 MySQL 配置文件（&lt;code&gt;/etc/my.cnf&lt;/code&gt; 目录下的配置）中添加 &lt;code&gt;port=3307&lt;/code&gt;，照做后问题解决。&lt;/p&gt;
+&lt;p&gt;还要记得修改&lt;code&gt;application.yml&lt;/code&gt;中的端口设置。&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
