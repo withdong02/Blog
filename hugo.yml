@@ -2,9 +2,14 @@ baseURL: "https://withdong02.top/"
 title: withdong02
 paginate: 5
 theme: PaperMod
-languageCode: "zh-cn"
-defaultContentLanguage: "zh-cn"
-languageName: "中文"
+defaultContentLanguage: zh
+defaultContentLanguageInSubdir: false
+
+languages:
+  zh:
+    languageCode: zh
+    languageName: 中文
+    weight: 1
 
 
 
