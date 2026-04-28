@@ -24,9 +24,9 @@ minify:
 
 params:
   env: production # to enable google analytics, opengraph, twitter-cards and schema.
-  title: ExampleSite
-  description: "ExampleSite description"
-  keywords: [Blog, Portfolio, PaperMod]
+  title: withdong02 
+  description: "分享 Java、算法、Web开发等技术心得，记录学习成长之路"
+  keywords: [Java,算法,Web开发,技术博客,withdong02]
   author: Me
   # author: ["Me", "You"] # multiple authors
   images: ["<link or path of image for opengraph, twitter-cards>"]
@@ -81,16 +81,14 @@ params:
 
   # home-info mode
   homeInfoParams:
-    Title: "Hi there \U0001F44B"
+    Title: "叫我蕫冬咚 \U0001F44B"
     Content: Welcome to my blog
 
   socialIcons:
-    - name: x
-      url: "https://x.com/"
     - name: github
       url: "https://github.com/withdong02"
     - name: email
-      url: "https://mail.qq.com"
+      url: "mailto:withdong02@qq.com"
 
   analytics:
     google:
@@ -138,6 +136,9 @@ menu:
 # Read: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#using-hugos-syntax-highlighter-chroma
 pygmentsUseClasses: true
 markup:
+  goldmark:
+    renderer:
+      unsafe: true
   highlight:
     noClasses: false
     # anchorLineNos: true

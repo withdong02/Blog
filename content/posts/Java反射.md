@@ -20,7 +20,7 @@ categories: Java基础
 
 ## 反射的基石：`Class`对象
 
-编译器在编译 Java 源代码时会生成 `.class` 文件（字节码文件）。当 JVM 需要用到某个类时，它的类加载器会读取并解析对应的 `.class` 文件，在方法区（或元空间）构建该类的运行时数据结构，同时在堆内存中创建一个代表该类的 **`java.lang.Class` 对象**。每个被加载的类在 JVM 中都有且只有一个对应的 `Class` 对象（在同一个类加载器命名空间内）。
+编译器在编译 Java 源代码时会生成 `.class` 文件（字节码文件）。当 JVM 需要用到某个类时，它的类加载器会读取并解析对应的 `.class` 文件，在方法区（或元空间）构建该类的运行时数据结构，同时在堆内存中创建一个代表该类的 **`java.lang.Class`** **对象**。每个被加载的类在 JVM 中都有且只有一个对应的 `Class` 对象（在同一个类加载器命名空间内）。
 
 这里的`Class`是一个类的名字，不要和`class`关键字搞混。
 
@@ -40,7 +40,7 @@ try {
 }
 ```
 
-解释一下这三种方法泛型的使用：法一使用`Class<? extends Person> `因为`Class`对象是在运行时从`Person`实例获取的，而`Person`实例的具体类型只能在运行时创建和确定，编译阶段无法判断，所以使用通配符 ，又因为`person`可能是`Person`实例，也可能是`Person`的子类实例，所以最终写成`Class< ? extends Person>`；法二使用`Class<Person>`因为编译时已知具体类型；法三使用`Class<?>`因为通过字符串动态加载类，编译时无法确定具体类型，所以使用通配符。这三个 Class 对象都是同一个（上面也提到了，一个类唯一对应一个 Class 对象）。
+解释一下这三种方法泛型的使用：法一使用`Class<? extends Person> ` 因为`Class`对象是在运行时从`Person`实例获取的，而`Person`实例的具体类型只能在运行时创建和确定，编译阶段无法判断，所以使用通配符 ，又因为`person`可能是`Person`实例，也可能是`Person`的子类实例，所以最终写成`Class< ? extends Person>`；法二使用`Class<Person>`因为编译时已知具体类型；法三使用`Class<?>`因为通过字符串动态加载类，编译时无法确定具体类型，所以使用通配符。这三个 Class 对象都是同一个（上面也提到了，一个类唯一对应一个 Class 对象）。
 
 **最常用、最灵活的是法三**
 
@@ -134,11 +134,8 @@ Human
 说明几点：
 
 1. `getDeclaredFields()`是获取所有字段，并返回一个数组，`getField`则是根据参数返回指定字段，返回的是`Field`实例。
-
 2. 最后一行`speciesField.get(null)`传入参数`null`，因为静态字段是属于这个类的，当然也可以传入对象`me`。
-
 3. `ageField.setAccessible(true);`这个方法传入参数`true`表示**屏蔽Java语言的访问检查**。看下面这个例子
-
    ```Java
    Field[] allFields = clazz.getDeclaredFields();
    for (Field f : allFields) {
@@ -146,7 +143,6 @@ Human
        System.out.println("  可访问性: " + f.canAccess(target));
    }
    ```
-   
    ```
    public String name
    可访问性: true
@@ -154,10 +150,11 @@ Human
    可访问性: false
    public static String species
    可访问性: true
+   ```
 
 ​		输出如上，`age`是不可访问的，在`setAccessible(true)`后可以访问并修改。否则会报错。
 
-4. 如果想要访问`private`或其他非`public`字段，必须使用`getDeclaredField()`，**注意里面有`Declared`，这个规律同样适用后面的`Method`和`Constructor`。**
+1. 如果想要访问`private`或其他非`public`字段，必须使用`getDeclaredField()`，**注意里面有`Declared`，这个规律同样适用后面的`Method`和`Constructor`。**
 
 ### 操作方法
 
@@ -259,7 +256,6 @@ System.out.println("私有构造创建: " + secret.name + ", " + ageField.get(se
 参考文章：
 
 - [大白话说Java反射：入门、使用、原理 - 陈树义 - 博客园](https://www.cnblogs.com/chanshuyi/p/head_first_of_reflection.html)
-
 - [Java基础之—反射（非常重要）-CSDN博客](https://blog.csdn.net/sinat_38259539/article/details/71799078)
+- [Java中的反射 Reflection in Java\_哔哩哔哩\_bilibili](https://www.bilibili.com/video/BV1K4421w7zP/?spm_id_from=333.1387.homepage.video_card.click\&vd_source=7ea0b75868faf9dd624fab975b80bfbf)
 
-- [Java中的反射 Reflection in Java_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1K4421w7zP/?spm_id_from=333.1387.homepage.video_card.click&vd_source=7ea0b75868faf9dd624fab975b80bfbf)
