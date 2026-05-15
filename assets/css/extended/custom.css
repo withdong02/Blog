@@ -1,19 +1,92 @@
-/* 声明自定义字体 */
+/* 中文使用 LXGW，只覆盖 CJK 字符，避免接管英文 */
 @font-face {
-  font-family: 'LXGWWenKaiMonoGB';
+  font-family: 'LXGWWenKaiMonoGB-CJK';
   src: url('/fonts/LXGWWenKaiMonoGB-Medium.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+2E80-2EFF,
+    U+3000-303F,
+    U+3400-4DBF,
+    U+4E00-9FFF,
+    U+F900-FAFF,
+    U+FF00-FFEF;
+}
+
+/* 英文使用 Claude.ai/Anthropic Sans */
+@font-face {
+  font-family: 'Anthropic Sans';
+  src:
+    local('Anthropic Sans'),
+    url('/fonts/AnthropicSans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0100-024F, U+1E00-1EFF;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans';
+  src:
+    local('Anthropic Sans Medium'),
+    local('Anthropic Sans'),
+    url('/fonts/AnthropicSans-500.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0100-024F, U+1E00-1EFF;
 }
 
-/* 全局应用字体 */
-body {
-    font-family: 'LXGWWenKaiMonoGB', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+@font-face {
+  font-family: 'Anthropic Sans';
+  src:
+    local('Anthropic Sans Bold'),
+    local('Anthropic Sans'),
+    url('/fonts/AnthropicSans-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0100-024F, U+1E00-1EFF;
 }
 
-/* 强制为代码块应用自定义字体 */
-.post-content pre,
-.post-content code {
-    font-family: 'LXGWWenKaiMonoGB', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+:root {
+  --site-font-family:
+    'Anthropic Sans',
+    'LXGWWenKaiMonoGB-CJK',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Open Sans',
+    'Helvetica Neue',
+    sans-serif;
+}
+
+html,
+body,
+body *,
+code,
+pre,
+kbd,
+samp,
+.highlight,
+.highlight *,
+.chroma,
+.chroma * {
+  font-family: var(--site-font-family) !important;
+}
+
+.md-content pre code,
+.highlight pre.chroma code {
+  display: block;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  padding: 14px 16px;
+  word-break: normal;
+  overflow-wrap: normal;
+  white-space: pre;
 }
