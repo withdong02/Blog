@@ -60,6 +60,14 @@ hugo server --buildDrafts --buildFuture
 
 If Hugo is unavailable, install Hugo Extended for Windows as a global command before validating.
 
+## Deployment
+
+- Deployment is handled by GitHub Actions in `.github/workflows/deploy.yml`.
+- Pushes to `master` build the Hugo site and mirror `public/` to `ubuntu@124.221.38.221:/var/www/blog/`.
+- The workflow uses `rsync --delete`, so files that no longer exist in `public/` are removed from the remote deploy directory.
+- Store the SSH private key in the GitHub repository secret `DEPLOY_SSH_KEY`; do not commit private keys or server passwords.
+- The deploy user must be able to write to `/var/www/blog` without an interactive password prompt.
+
 ## Git Rules
 
 - Check `git status --short --branch` before and after changes.
