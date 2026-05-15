@@ -2,7 +2,7 @@
 
 ## Project Type
 
-This repository is a Hugo static blog using the PaperMod theme as a Git submodule.
+This repository is a Hugo static blog using a vendored copy of the PaperMod theme.
 
 - Hugo config: `hugo.yml`
 - Theme: `themes/PaperMod`
@@ -18,7 +18,7 @@ This repository is a Hugo static blog using the PaperMod theme as a Git submodul
 - `assets/`: Hugo pipeline assets, such as custom CSS and fonts.
 - `static/`: files copied directly to the site root, such as images, verification files, and static font files.
 - `layouts/`: local layout overrides for PaperMod.
-- `themes/PaperMod/`: upstream theme submodule. Do not edit theme files directly unless the task is explicitly to patch the theme submodule.
+- `themes/PaperMod/`: vendored PaperMod theme source tracked by this repository.
 - `public/`: generated build output. Do not edit by hand.
 
 ## Naming Rules
@@ -40,9 +40,9 @@ This repository is a Hugo static blog using the PaperMod theme as a Git submodul
 
 ## Theme Rules
 
-- PaperMod is managed as a Git submodule.
-- Prefer local overrides in `layouts/`, `assets/`, or `static/` over modifying `themes/PaperMod/`.
-- Before changing the theme submodule, explain why a local override is insufficient.
+- PaperMod is vendored under `themes/PaperMod/` and can be edited directly when the task is theme behavior or theme compatibility.
+- Prefer local overrides in `layouts/`, `assets/`, or `static/` when the change is site-specific and does not need to live in the theme source.
+- Keep theme changes focused and easy to review, because upstream PaperMod updates must be merged manually.
 
 ## Validation
 

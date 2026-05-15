@@ -7,8 +7,8 @@ defaultContentLanguageInSubdir: false
 
 languages:
   zh:
-    languageCode: zh
-    languageName: 中文
+    locale: zh
+    label: 中文
     weight: 1
 
 
