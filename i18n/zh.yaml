@@ -23,6 +23,9 @@
 - id: home
   translation: "主页"
 
+- id: nav_home
+  translation: "首页"
+
 - id: edit_post
   translation: "编辑"
 
