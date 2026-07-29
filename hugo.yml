@@ -81,13 +81,15 @@ params:
   # home-info mode
   homeInfoParams:
     Title: "叫我蕫冬咚 \U0001F44B"
-    Content: Welcome to my blog
+    Content: "普通人如果想比别人更上一层楼，就要多按一层电梯！"
 
   socialIcons:
     - name: github
       url: "https://github.com/withdong02"
     - name: email
-      url: "mailto:withdong02@qq.com"
+      url: "/games/spider-solitaire.html"
+    - name: wechat
+      url: "/games/minesweeper.html"
 
   analytics:
     google:
@@ -120,18 +122,18 @@ params:
     keys: ["title", "permalink", "summary", "content"]
 menu:
   main:
-    - identifier: categories
-      name: categories
-      url: /categories/
+    - identifier: taxonomies
+      name: taxonomies
+      url: /taxonomies/
       weight: 10
-    - identifier: tags
-      name: tags
-      url: /tags/
-      weight: 20
     - identifier: archives
       name: archives
       url: /archives
       weight: 30
+    - identifier: about
+      name: about
+      url: /about/
+      weight: 40
 # Read: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#using-hugos-syntax-highlighter-chroma
 pygmentsUseClasses: true
 markup:

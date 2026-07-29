@@ -43,3 +43,9 @@
 
 - id: archives
   translation: "归档"
+
+- id: about
+  translation: "关于"
+
+- id: taxonomies
+  translation: "分类 | 标签"

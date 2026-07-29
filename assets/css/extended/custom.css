@@ -90,3 +90,7 @@ samp,
   overflow-wrap: normal;
   white-space: pre;
 }
+
+.taxonomy-group + .taxonomy-group {
+  margin-top: calc(var(--content-gap) * 2);
+}

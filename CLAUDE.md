@@ -12,12 +12,17 @@ This repository is a Hugo static blog using a vendored copy of the PaperMod them
 ## Directory Rules
 
 - `content/posts/`: blog posts.
+- `content/categories/_index.md` and `content/tags/_index.md`: localized taxonomy landing-page metadata.
+- `content/taxonomies.md`: combined categories and tags overview page.
+- `content/about.md`: about page.
 - `content/archives.md`: archives page.
 - `content/search.md`: search page.
 - `archetypes/`: Hugo content templates.
 - `assets/`: Hugo pipeline assets, such as custom CSS and fonts.
 - `static/`: files copied directly to the site root, such as images, verification files, and static font files.
+- `static/games/`: self-contained browser games and their relative assets, published under `/games/`.
 - `layouts/`: local layout overrides for PaperMod.
+- `layouts/page.taxonomies.html`: combined taxonomy overview page layout.
 - `themes/PaperMod/`: vendored PaperMod theme source tracked by this repository.
 - `public/`: generated build output. Do not edit by hand.
 
@@ -40,9 +45,11 @@ This repository is a Hugo static blog using a vendored copy of the PaperMod them
 
 ## Theme Rules
 
-- PaperMod is vendored under `themes/PaperMod/` and can be edited directly when the task is theme behavior or theme compatibility.
-- Prefer local overrides in `layouts/`, `assets/`, or `static/` when the change is site-specific and does not need to live in the theme source.
-- Keep theme changes focused and easy to review, because upstream PaperMod updates must be merged manually.
+- The vendored PaperMod theme is permanently frozen at the version tracked in this repository. Do not upgrade, replace, or resync it with upstream.
+- Before changing Hugo or PaperMod behavior, check the current official documentation for a supported configuration, parameter, i18n key, hook, or override.
+- Use this order: `hugo.yml`/front matter/i18n first; project-level overrides in `layouts/`, `assets/`, or `static/` second; vendored code under `themes/PaperMod/` only as a last resort.
+- Edit Hugo or PaperMod source directly when the official options cannot satisfy the requirement. Record why and keep the diff minimal.
+- Local PaperMod adjustment: the email icon uses Feather's original `24 x 24` viewBox for alignment.
 
 ## Validation
 
