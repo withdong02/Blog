@@ -49,3 +49,6 @@
 
 - id: taxonomies
   translation: "分类 | 标签"
+
+- id: search
+  translation: "搜索"

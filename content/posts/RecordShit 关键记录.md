@@ -6,11 +6,21 @@ date: 2026-07-28 22:21:55
 
 最开始我打算用 Flutter，反正用的是 ai，但随着项目开始我就遇到了很多困难，编程语言下载、Android Studio配置、app 打包等。后来我了解到了 uniapp 和 HBuilderX，“开发一次，多端覆盖”，这句口号吸引了我，了解后我快速上手，马上也得到了最初的版本，像下面这样。
 
-<img src="https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/ffc0959d11158867d77f316988db0ca0.jpg" alt="ffc0959d11158867d77f316988db0ca0" style="zoom: 25%;" /><img src="https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/ab4d2860ec4257fb4513b23eb966aba1.jpg" alt="ab4d2860ec4257fb4513b23eb966aba1" style="zoom:25%;" />
+{{< collapse summary="点击查看图片" >}}
+<div class="image-pair">
+  <img src="https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/ffc0959d11158867d77f316988db0ca0.jpg" alt="RecordShit 初版界面 1">
+  <img src="https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/ab4d2860ec4257fb4513b23eb966aba1.jpg" alt="RecordShit 初版界面 2">
+</div>
+{{< /collapse >}}
 
 不得不说确实简陋，至少清晰明了哈哈哈。最开始我是打算做多端的，先实现了 app 版本，然后用 uniapp 转小程序，结果效果不堪入目，各种卡片高度错乱，字体排版混乱，可能是我没有写好提示词，导致代码不兼容，后续维护也比较麻烦。经过我深思熟虑后，我选择同时进行两个版本的开发，app 不动，小程序用微信原生框架。我在这个方向进行了很长一段时间，遇到很多 bug，各种加载问题、组件、数据库部署等各种问题，如下图。当然在这两个多月开发中我学到了很多，中间也使用了各种 skill，不断在网上看 ui 设计的视频，学习一些好用的提示词等等。
 
-<img src="https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/40469970a0967c1e7a7cac8cc2065851.jpg" alt="40469970a0967c1e7a7cac8cc2065851" style="zoom:25%;" /><img src="https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/390fe1c7b7f2c410872fc5a201dd76a5.jpg" alt="390fe1c7b7f2c410872fc5a201dd76a5" style="zoom:25%;" />
+{{< collapse summary="点击查看图片" >}}
+<div class="image-pair">
+  <img src="https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/40469970a0967c1e7a7cac8cc2065851.jpg" alt="RecordShit 开发过程界面 1">
+  <img src="https://dongimagehost-1356670526.cos.ap-nanjing.myqcloud.com/2025/07/390fe1c7b7f2c410872fc5a201dd76a5.jpg" alt="RecordShit 开发过程界面 2">
+</div>
+{{< /collapse >}}
 
 今天是7月28日，距离第一次提交代码已经过去快两个月，我又做了一个重要的决定，放弃 app 版本，全面转向微信小程序的开发，主要还是双端维护过于复杂，看似功能完好，实际上是屎上绣花。小程序任何操作系统上都可以用，而 app 目前只能在安卓手机上使用，所以我果断转向小程序。还有个原因就是我的小程序备案通过了，app 在应用市场上架很麻烦，直接给安装包很多人不会用，而小程序就简单了，直接微信扫个码就好。
 

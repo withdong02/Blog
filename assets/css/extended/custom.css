@@ -1,7 +1,7 @@
 /* 中文使用 LXGW，只覆盖 CJK 字符，避免接管英文 */
 @font-face {
   font-family: 'LXGWWenKaiMonoGB-CJK';
-  src: url('/fonts/LXGWWenKaiMonoGB-Medium.ttf') format('truetype');
+  src: url('/fonts/LXGWWenKaiMonoGB-Medium.woff2') format('woff2');
   font-weight: 400 700;
   font-style: normal;
   font-display: swap;
@@ -93,4 +93,92 @@ samp,
 
 .taxonomy-group + .taxonomy-group {
   margin-top: calc(var(--content-gap) * 2);
+}
+
+.image-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.md-content .image-pair img {
+  width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+.code-collapse {
+  margin: 1rem 0;
+}
+
+.code-collapse > summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.code-collapse[open] > summary {
+  margin-bottom: 0.5rem;
+}
+
+#menu a[href$="/search/"] {
+  display: flex;
+  align-items: center;
+  height: var(--header-height);
+}
+
+#menu a[href$="/search/"] > span {
+  display: flex;
+  align-items: center;
+  font-size: 0;
+}
+
+#menu a[href$="/search/"] svg {
+  display: block;
+}
+
+.friend-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0.75rem 0 1.5rem;
+}
+
+.friend-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem;
+  color: var(--primary);
+  background: var(--entry);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.friend-card:hover {
+  border-color: var(--tertiary);
+}
+
+.friend-card img {
+  width: 56px;
+  height: 56px;
+  margin: 0;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.friend-card strong,
+.friend-card small {
+  display: block;
+}
+
+.friend-card small {
+  margin-top: 0.2rem;
+  color: var(--secondary);
+}
+
+@media (max-width: 600px) {
+  .friend-grid {
+    grid-template-columns: 1fr;
+  }
 }

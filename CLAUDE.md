@@ -22,6 +22,7 @@ This repository is a Hugo static blog using a vendored copy of the PaperMod them
 - `static/`: files copied directly to the site root, such as images, verification files, and static font files.
 - `static/games/`: self-contained browser games and their relative assets, published under `/games/`.
 - `layouts/`: local layout overrides for PaperMod.
+- `layouts/_markup/`: project-level Hugo Markdown render hooks.
 - `layouts/page.taxonomies.html`: combined taxonomy overview page layout.
 - `themes/PaperMod/`: vendored PaperMod theme source tracked by this repository.
 - `public/`: generated build output. Do not edit by hand.
