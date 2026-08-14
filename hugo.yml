@@ -26,6 +26,10 @@ minify:
 outputs:
   home: [HTML, RSS, JSON]
 
+services:
+  googleAnalytics:
+    ID: G-W7C1XDVYLL
+
 params:
   env: production # to enable google analytics, opengraph, twitter-cards and schema.
   title: withdong02 
@@ -33,6 +37,9 @@ params:
   keywords: [Java,算法,Web开发,技术博客,withdong02]
   author: withdong02
   # author: ["Me", "You"] # multiple authors
+  analytics:
+    google:
+      SiteVerificationTag: "cSzMmRaz1N0azlkz9Kz9JYevONaGzayMLsgvKNh06Mo"
   defaultTheme: auto # dark, light
   disableThemeToggle: false
 
@@ -46,7 +53,21 @@ params:
   UseHugoToc: true
   disableSpecial1stPost: false
   disableScrollToTop: false
-  comments: false
+  comments: true
+
+  # giscus comments (https://giscus.app)
+  giscus:
+    repo: "withdong02/Blog"
+    repoId: "R_kgDOSDi3UQ"
+    category: "General"
+    categoryId: "DIC_kwDOSDi3Uc4DDWBZ"
+    mapping: pathname
+    strict: "0"
+    reactionsEnabled: "1"
+    emitMetadata: "0"
+    inputPosition: top
+    theme: preferred_color_scheme
+    lang: "zh-CN"
   hidemeta: false
   hideSummary: false
   showtoc: true

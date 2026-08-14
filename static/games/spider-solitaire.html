@@ -558,6 +558,19 @@
         </div>
     </div>
 
+    <!-- 开场提示弹窗 -->
+    <div class="modal" id="introModal" style="z-index: 2500;">
+        <div class="modal-content">
+            <div style="font-size: calc(52px * var(--scale)); line-height: 1.2; margin-bottom: calc(10px * var(--scale));">🃏</div>
+            <h1 class="modal-title">蜘蛛纸牌挑战</h1>
+            <p style="color: #fff; font-size: calc(16px * var(--scale)); line-height: 1.8; margin: 0 0 calc(10px * var(--scale)) 0;">
+                集齐 8 组 K-A，通关即可解锁我的联系方式<br>
+                祝你顺利通关！
+            </p>
+            <button class="modal-btn" id="introStartBtn">开始游戏</button>
+        </div>
+    </div>
+
     <!-- 死锁弹窗 -->
     <div class="modal" id="deadlockModal">
         <div class="modal-content small">
@@ -1546,6 +1559,18 @@
 
         // 初始化游戏
         const game = new SpiderSolitaire();
+
+        // 开场提示弹窗：通关解锁联系方式
+        const introModal = document.getElementById('introModal');
+        introModal.classList.add('show');
+        document.getElementById('introStartBtn').addEventListener('click', () => {
+            introModal.classList.remove('show');
+        });
+        introModal.addEventListener('click', (e) => {
+            if (e.target === introModal) {
+                introModal.classList.remove('show');
+            }
+        });
     </script>
 </body>
 </html>

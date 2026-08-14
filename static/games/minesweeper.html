@@ -365,6 +365,18 @@ body {
         </div>
     </div>
 
+    <div class="modal" id="intro-modal">
+        <div class="modal-content">
+            <div style="font-size: 52px; line-height: 1.2; margin-bottom: 10px;">💣</div>
+            <h2>扫雷挑战</h2>
+            <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.8; color: #000;">
+                扫除所有地雷，通关即可解锁我的联系方式<br>
+                祝你顺利通关！
+            </p>
+            <button class="close-modal" id="close-intro-modal">开始扫雷</button>
+        </div>
+    </div>
+
     <script>
 class MinesweeperGame {
     constructor() {
@@ -386,6 +398,9 @@ class MinesweeperGame {
         this.bindEvents();
         this.bindModalEvents();
         this.handleResize();
+
+        // 开场提示弹窗：通关解锁联系方式
+        document.getElementById('intro-modal').classList.add('show');
 
         window.addEventListener('load', () => {
             setTimeout(() => this.adjustCellSize(), 100);
@@ -735,6 +750,17 @@ class MinesweeperGame {
         hardModal.addEventListener('click', (e) => {
             if (e.target === hardModal) {
                 hardModal.classList.remove('show');
+            }
+        });
+
+        const introModal = document.getElementById('intro-modal');
+        document.getElementById('close-intro-modal').addEventListener('click', () => {
+            introModal.classList.remove('show');
+        });
+
+        introModal.addEventListener('click', (e) => {
+            if (e.target === introModal) {
+                introModal.classList.remove('show');
             }
         });
     }
