@@ -78,7 +78,7 @@ params:
     enabled: false # needs to be explicitly set
     title: withdong02
     subtitle: "Keep Learning!"
-    imageUrl: "/static/author.jpg"
+    imageUrl: "/author.jpg"
     imageWidth: 120
     imageHeight: 120
     imageTitle: my image
