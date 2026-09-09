@@ -182,3 +182,46 @@ samp,
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Floating bottom-right controls ---- */
+
+/* Theme toggle: hide its header slot. The button element itself is moved to
+   <body> by layouts/partials/extend_footer.html and styled below as a
+   self-contained fixed round button (no inherited header flex/line-height). */
+.logo-switches {
+  display: none;
+}
+
+#theme-toggle {
+  position: fixed;
+  right: 2rem;
+  bottom: calc(4rem + 2.5rem + 0.75rem); /* above scroll-to-top + 0.75rem gap */
+  z-index: 100;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 64px;
+  background: var(--tertiary);
+  color: var(--secondary);
+}
+
+#theme-toggle:hover {
+  color: var(--primary);
+}
+
+/* Scroll-to-top: always visible (neutralize the show-on-scroll script). */
+.top-link.hidden {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Keep the pair aligned when the scroll-to-top button is shifted up on
+   narrow list pages (mirrors PaperMod's .list .top-link rule). */
+@media screen and (max-width: 900px) {
+  .list #theme-toggle {
+    transform: translateY(-5rem);
+  }
+}

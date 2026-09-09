@@ -1,3 +1,34 @@
 {{- /* DeepSeek-style starfield particle background — see static/js/starfield.js */ -}}
 <canvas id="starfield-canvas" aria-hidden="true"></canvas>
 <script src="{{ "js/starfield.js" | relURL }}" defer></script>
+{{- /* In-place click-to-zoom for article images — see static/js/img-zoom.js */ -}}
+<script src="{{ "js/img-zoom.js" | relURL }}" defer></script>
+{{- /* Reading-progress section rail (right-edge ticks + thin top progress bar)
+       — see assets/js/toc-sidebar.js.
+       Loaded through the Hugo asset pipeline so the fingerprinted URL changes
+       whenever the script changes: the rail markup and this script must stay
+       in sync. */ -}}
+{{- $tocJs := resources.Get "js/toc-sidebar.js" | minify | fingerprint "sha256" }}
+<script src="{{ $tocJs.RelPermalink }}" integrity="{{ $tocJs.Data.Integrity }}" defer></script>
+{{- /* Theme toggle: move the button out of the header to the end of <body>,
+       where custom.css styles it as a fixed bottom-right round button.
+       Smooth the light/dark switch: PaperMod flips data-theme instantly, so
+       watch for the change and enable color transitions (motion.css) for the
+       duration of the swap only. */ -}}
+<script>
+(function () {
+    var t = document.getElementById("theme-toggle");
+    if (t) document.body.appendChild(t);
+
+    var root = document.documentElement;
+    var timer;
+    if (!window.MutationObserver) return;
+    new MutationObserver(function () {
+        root.classList.add("theme-transition");
+        window.clearTimeout(timer);
+        timer = window.setTimeout(function () {
+            root.classList.remove("theme-transition");
+        }, 320);
+    }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+})();
+</script>

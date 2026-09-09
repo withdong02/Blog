@@ -1,0 +1,31 @@
+/* Click-to-zoom images in place (medium-zoom style) — see static/js/img-zoom.js */
+
+.md-content img.img-zoomable {
+    cursor: zoom-in;
+}
+
+/* Zoomed image: lifted above the dimming overlay. The overlay is appended
+   inside <main> so both live in the same stacking context and the image
+   (z-index 999) always paints above the scrim (z-index 998). */
+.md-content img.img-zoomed {
+    position: relative;
+    z-index: 999;
+    cursor: zoom-out;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+#img-zoom-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 998;
+    background: rgba(15, 17, 26, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+#img-zoom-overlay.on {
+    opacity: 1;
+    pointer-events: auto;
+}

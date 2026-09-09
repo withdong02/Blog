@@ -1,0 +1,16 @@
+{{- /*
+   Renders one tick per article heading for the right-edge section rail
+   (.toc-rail). Recursive: nested headings are rendered after their parent so
+   the rail follows document order. Context: a slice of .Fragments.Headings.
+   Hugo's fragment tree can contain a synthetic root without id/title; skip it
+   but still descend into its children.
+*/ -}}
+{{- range . }}
+{{- if and .ID .Title }}
+<a class="toc-tick toc-tick-h{{ .Level }}" href="#{{ .ID }}" aria-label="{{ .Title }}">
+  <span class="toc-tick-bar"></span>
+  <span class="toc-tick-label">{{ .Title }}</span>
+</a>
+{{- end }}
+{{- with .Headings }}{{ partial "toc_ticks.html" . }}{{ end }}
+{{- end }}

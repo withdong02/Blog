@@ -1,0 +1,241 @@
+/*
+ * Project: minimal right-edge section rail (project-level override,
+ * PaperMod untouched).
+ *
+ * One tick per article heading, pinned to the right edge and vertically
+ * centered. The current section's tick is solid and a marker glides to it;
+ * ticks fade with their distance from the current one so the rail stays quiet
+ * while reading (hover / touch / keyboard focus brings the full rail back).
+ * The vertical gap is fitted to the viewport by toc-sidebar.js
+ * (--toc-tick-gap), so long outlines stay on screen.
+ *
+ * Also drives the thin top reading-progress bar.
+ * Without JS the rail stays hidden and PaperMod's inline <details class="toc">
+ * remains the fallback entry.
+ */
+
+/* ---- top reading progress bar ---- */
+.toc-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--primary);
+    opacity: 0.85;
+    z-index: 60;
+    pointer-events: none;
+    transform: scaleX(0);
+    transform-origin: left center;
+    will-change: transform;
+    transition: transform var(--ds-duration-fast) linear;
+}
+
+/* keep anchor-jumped headings clear of the fixed progress bar */
+.md-content :is(h2, h3, h4, h5, h6) {
+    scroll-margin-top: 12px;
+}
+
+/* ================= section rail ================= */
+
+.toc-rail {
+    display: none;
+}
+
+html.toc-rail-ready .toc-rail {
+    display: flex;
+    position: fixed;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 210;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--toc-tick-gap, 12px);
+    --ease: var(--ds-ease-out-soft);
+    --tick-w-active: 34px; /* slot width, active bar width, marker width */
+    animation: toc-rail-in var(--ds-duration-base) var(--ease) both;
+}
+
+/* DSH turn-rail style entrance: fade + short rise */
+@keyframes toc-rail-in {
+    from {
+        opacity: 0;
+        transform: translateY(calc(-50% + 6px));
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(-50%);
+    }
+}
+
+/* Each tick is a fixed slot; the bar inside is right-anchored so it can grow
+   leftwards (DSH: .mark::before { right: 0 }).
+   Depth reads as length via --tick-w / --tick-w-hover (h3 uses the default). */
+.toc-tick {
+    --tick-w: 16px;
+    --tick-w-hover: 26px;
+    position: relative;
+    display: block;
+    width: var(--tick-w-active);
+    height: 2px;
+    line-height: 0;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.toc-tick-h2 {
+    --tick-w: 26px;
+    --tick-w-hover: 34px;
+}
+
+:is(.toc-tick-h4, .toc-tick-h5, .toc-tick-h6) {
+    --tick-w: 10px;
+    --tick-w-hover: 20px;
+}
+
+/* a 2px bar is hard to hit: widen the hit area without changing the layout */
+.toc-tick::before {
+    content: "";
+    position: absolute;
+    inset: -6px -10px;
+}
+
+.toc-tick-bar {
+    --tick-fade: 0.32;
+    --tick-min: 0.06;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--tick-w);
+    height: 2px;
+    border-radius: 2px;
+    background: var(--tertiary);
+    opacity: clamp(var(--tick-min), calc(1 - var(--tick-dist, 0) * var(--tick-fade)), 1);
+    transition:
+        width 0.14s var(--ease),
+        background-color 0.14s var(--ease),
+        opacity 0.22s var(--ease);
+}
+
+/* hover: like DSH's markPreview — the bar lengthens towards the left */
+.toc-tick:hover .toc-tick-bar {
+    width: var(--tick-w-hover);
+    background: var(--secondary);
+}
+
+/* current section: the tick grows and turns solid */
+.toc-tick.toc-active .toc-tick-bar {
+    width: var(--tick-w-active);
+    background: var(--primary);
+}
+
+/* pointer over the rail — or a finger on it (.toc-rail-reveal), or keyboard
+   focus inside it — brings the whole outline back */
+.toc-rail:hover .toc-tick-bar,
+.toc-rail:focus-within .toc-tick-bar,
+.toc-rail.toc-rail-reveal .toc-tick-bar {
+    opacity: 1;
+}
+
+/* marker that glides between ticks instead of jumping (DSH: top .22s) */
+.toc-rail-marker {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--tick-w-active);
+    height: 2px;
+    border-radius: 2px;
+    background: var(--primary);
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform;
+    transition:
+        transform 0.22s var(--ease),
+        opacity 0.15s var(--ease);
+}
+
+/* hover title, floating to the left of the rail */
+.toc-tick-label {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 0.55rem);
+    max-width: 15rem;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--theme);
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.1);
+    color: var(--primary);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-50%) translateX(6px);
+    transition:
+        opacity 0.14s var(--ease),
+        transform 0.14s var(--ease),
+        visibility 0.14s var(--ease);
+}
+
+.toc-tick:hover .toc-tick-label,
+.toc-tick:focus-visible .toc-tick-label {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* touch devices have no hover: no title tooltip, and a higher opacity floor
+   so the rail stays discoverable */
+@media (hover: none) {
+    .toc-tick-label {
+        display: none;
+    }
+
+    .toc-tick-bar {
+        --tick-fade: 0.3;
+        --tick-min: 0.14;
+    }
+}
+
+/* keep the rail out of the way on small screens */
+@media (max-width: 600px) {
+    html.toc-rail-ready .toc-rail {
+        right: 0.4rem;
+        gap: var(--toc-tick-gap, 9px);
+        --tick-w-active: 24px;
+    }
+
+    .toc-tick {
+        --tick-w: 12px;
+        --tick-w-hover: 20px;
+    }
+
+    .toc-tick-h2 {
+        --tick-w: 18px;
+        --tick-w-hover: 24px;
+    }
+
+    :is(.toc-tick-h4, .toc-tick-h5, .toc-tick-h6) {
+        --tick-w: 8px;
+        --tick-w-hover: 16px;
+    }
+}
+
+/* once JS is active the inline <details class="toc"> steps aside */
+body.toc-enhanced article.post-single details.toc {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toc-tick-bar,
+    .toc-tick-label,
+    .toc-progress {
+        transition: none;
+    }
+}

@@ -1,0 +1,37 @@
+/*
+ * Project: motion tokens + theme-switch easing.
+ *
+ * Easing/duration values mirror the DSH (deepseek-harness) design tokens so the
+ * site's transitions feel the same:
+ *   --ds-ease-in-out      cubic-bezier(.4, 0, .2, 1)   (standard)
+ *   --ds-ease-out-soft    cubic-bezier(.2, .8, .2, 1)  (turn-rail motion)
+ *   --ds-duration-fast    .1s / base .2s / slow .3s
+ *
+ * The theme toggle itself is instantaneous in PaperMod (inline script flips
+ * data-theme), so a MutationObserver in extend_footer.html adds .theme-transition
+ * for ~320ms; only during that window do colors animate. Keeping the wildcard
+ * transition scoped to the switch avoids paying for it while scrolling.
+ */
+
+:root {
+    --ds-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ds-ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ds-duration-fast: 0.1s;
+    --ds-duration-base: 0.2s;
+    --ds-duration-slow: 0.3s;
+}
+
+html.theme-transition :not(canvas):not(iframe) {
+    transition:
+        background-color var(--ds-duration-slow) var(--ds-ease-in-out),
+        color var(--ds-duration-slow) var(--ds-ease-in-out),
+        border-color var(--ds-duration-slow) var(--ds-ease-in-out),
+        fill var(--ds-duration-slow) var(--ds-ease-in-out),
+        stroke var(--ds-duration-slow) var(--ds-ease-in-out) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.theme-transition :not(canvas):not(iframe) {
+        transition: none !important;
+    }
+}

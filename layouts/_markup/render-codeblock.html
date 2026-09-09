@@ -1,7 +1,7 @@
 {{- $code := strings.TrimSuffix "\n" .Inner -}}
 {{- $lineCount := len (strings.Split $code "\n") -}}
 {{- $highlighted := transform.HighlightCodeBlock . -}}
-{{- if gt $lineCount 40 }}
+{{- if gt $lineCount 50 }}
 <details class="code-collapse">
   <summary>{{ .Type | default "代码" }} · {{ $lineCount }} 行 · 点击展开</summary>
   {{ $highlighted.Wrapped }}
