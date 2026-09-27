@@ -253,6 +253,8 @@ public class ProducerConsumerExample {
 
 ```
 
+提一嘴：前面提到线程有 `BLOCKED` 状态，只有用 `synchronized` 抢不到锁时，线程才会进入 `BLOCKED` 状态（notify 调醒后，抢到锁前也是 `BLOCKED` 状态），如果 `lock.lock()` 抢不到锁则进入 `WAITING` 状态，因为它通过在 AQS 中定义的内部队列来阻塞和唤醒。
+
 总的来说 wait/notify 简单轻量，但唤醒粒度粗，`Condition` 一个 Lock 可以绑定多个条件，唤醒更准确。Lock 的底层，正是 JUC 的灵魂——AQS。
 
 ## AQS
@@ -324,7 +326,7 @@ AQS 默认允许"插队"，一个新来的线程可以在排队线程之前尝�
 
 如果想实现公平锁，就在 `tryAcquire` 中调用 `hasQueuedPredecessors`，如果队列中有比当前线程更早的等待着，就返回 false，让当前线程去排队。
 
-### 操作 AQS 的三个核心方法
+### 操作 `state` 的三个核心方法
 
 | 方法                                       | 作用                                   |
 | ------------------------------------------ | -------------------------------------- |
