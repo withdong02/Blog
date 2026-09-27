@@ -1,0 +1,69 @@
+{{- /*
+   Project override of PaperMod's render-image hook.
+
+   PaperMod's own hook emits alt/src/title/loading only, so no content image
+   reserves a box. That is not merely a CLS matter: measured on the longest
+   post, lazy images grew the document by 959px *during* a smooth scroll and the
+   target heading settled 971px below the top instead of 12px, so every anchor
+   link and every rail mark landed in the wrong place. See CLAUDE.md > Anchor
+   Scrolling.
+
+   Local images (a page resource, an asset, or a file under static/) are read
+   with images.Config, which *errors* on a missing file rather than returning
+   empty — hence the os.FileExists guard.
+
+   Remote images are fetched once at build time with resources.GetRemote to read
+   their intrinsic size. That makes the build depend on the image host, so the
+   fetch is wrapped in try: an unreachable or missing image logs a warning and
+   is emitted without width/height instead of failing the build.
+*/ -}}
+{{- $u := urls.Parse .Destination -}}
+{{- $src := $u.String -}}
+{{- $w := 0 -}}
+{{- $h := 0 -}}
+{{- if $u.IsAbs -}}
+  {{- with try (resources.GetRemote $src) -}}
+    {{- if .Err -}}
+      {{- warnf "render-image: cannot fetch %s (%v) - emitting it without width/height" $src .Err -}}
+    {{- else -}}
+      {{- $w = .Value.Width -}}
+      {{- $h = .Value.Height -}}
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- $path := strings.TrimPrefix "./" (strings.TrimPrefix "/" $u.Path) -}}
+  {{- with or (.PageInner.Resources.Get $path) (resources.Get $path) -}}
+    {{- $src = .RelPermalink -}}
+    {{- $w = .Width -}}
+    {{- $h = .Height -}}
+  {{- else -}}
+    {{- $staticPath := printf "static/%s" $path -}}
+    {{- if os.FileExists $staticPath -}}
+      {{- with (images.Config $staticPath) -}}
+        {{- $w = .Width -}}
+        {{- $h = .Height -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $attributes := merge .Attributes (dict
+      "alt" .Text
+      "src" $src
+      "title" (.Title | transform.HTMLEscape)
+      "loading" "lazy"
+      "decoding" "async") -}}
+{{- /* width/height must go in as strings: printf "%q" on an int formats it as a
+       rune literal, so 951 came out as 'η'. Added only when the author did not
+       set them, and skipped when the size is unknown. */ -}}
+{{- if and $w $h -}}
+  {{- if not (or (index .Attributes "width") (index .Attributes "height")) -}}
+    {{- $attributes = merge $attributes (dict "width" (printf "%d" $w) "height" (printf "%d" $h)) -}}
+  {{- end -}}
+{{- end -}}
+<img
+  {{- range $k, $v := $attributes -}}
+    {{- if $v -}}
+      {{- printf " %s=%q" $k $v | safeHTMLAttr -}}
+    {{- end -}}
+  {{- end -}}>
+{{- /**/ -}}

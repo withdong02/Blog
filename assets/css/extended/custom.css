@@ -1,89 +1,84 @@
-/* 中文使用 LXGW，只覆盖 CJK 字符，避免接管英文 */
-@font-face {
-  font-family: 'LXGWWenKaiMonoGB-CJK';
-  src: url('/fonts/LXGWWenKaiMonoGB-Medium.woff2') format('woff2');
-  font-weight: 400 700;
-  font-style: normal;
-  font-display: swap;
-  unicode-range:
-    U+2E80-2EFF,
-    U+3000-303F,
-    U+3400-4DBF,
-    U+4E00-9FFF,
-    U+F900-FAFF,
-    U+FF00-FFEF;
-}
+/*
+ * Project: typography.
+ *
+ * No webfonts. Running text uses the system UI stack PaperMod declares in
+ * core/reset.css; code gets the explicit platform monospace stack below.
+ *
+ * This replaces the former LXGW WenKai Mono GB + Anthropic Sans setup. The CJK
+ * face alone was 9.1 MB — 95.9% of a page load, 47.9 s to download at 1.6 Mbps —
+ * and the blanket `font-family: var(--site-font-family) !important` rule that
+ * used it was also what stripped the UA's `monospace` default off
+ * pre/code/kbd/samp, so every code block rendered in a proportional face.
+ *
+ * Do not reintroduce a site-wide font-family rule here. PaperMod declares
+ * font-family exactly once (on body, in core/reset.css), so any global
+ * re-declaration silently breaks code rendering again.
+ */
 
-/* 英文使用 Claude.ai/Anthropic Sans */
-@font-face {
-  font-family: 'Anthropic Sans';
-  src:
-    local('Anthropic Sans'),
-    url('/fonts/AnthropicSans-400.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0100-024F, U+1E00-1EFF;
-}
-
-@font-face {
-  font-family: 'Anthropic Sans';
-  src:
-    local('Anthropic Sans Medium'),
-    local('Anthropic Sans'),
-    url('/fonts/AnthropicSans-500.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0100-024F, U+1E00-1EFF;
-}
-
-@font-face {
-  font-family: 'Anthropic Sans';
-  src:
-    local('Anthropic Sans Bold'),
-    local('Anthropic Sans'),
-    url('/fonts/AnthropicSans-700.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0100-024F, U+1E00-1EFF;
-}
-
+/*
+ * Reading size and measure are coupled — the column is sized so one line holds
+ * ~40 CJK characters (comfortable range 30-45), so both values live here:
+ *
+ *   PaperMod default   18px / 720px = 40.0 chars   (tuned for Latin)
+ *   current            16px / 640px = 40.0 chars
+ *
+ * Never change one without the other. Three values move together:
+ *   - the measure must stay inside 30-45 CJK chars per line;
+ *   - block code is sized by `--code-size` below, and its widest line
+ *     (75 characters) must still fit the column or desktop code blocks start
+ *     scrolling horizontally. At 0.9rem that is ~633px, inside 640px with
+ *     ~7px of headroom — so raising either the code size or the column width
+ *     is fine, lowering the column is not;
+ *   - inline code is pinned in rem for the same reason: it was 0.78em, which
+ *     shrank to 12.5px when the body moved to 16px.
+ * `--main-width` is PaperMod's own token (core/theme-vars.css); it also sets
+ * the footer width.
+ */
 :root {
-  --site-font-family:
-    'Anthropic Sans',
-    'LXGWWenKaiMonoGB-CJK',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Open Sans',
-    'Helvetica Neue',
-    sans-serif;
+  --reading-size: 16px;
+  --main-width: 640px;
+  --code-size: 0.9rem;
 }
 
-html,
-body,
-body *,
-code,
-pre,
-kbd,
-samp,
-.highlight,
-.highlight *,
-.chroma,
-.chroma * {
-  font-family: var(--site-font-family) !important;
+body {
+  font-size: var(--reading-size);
+}
+
+/* Inline code: pinned, not em-based, so it no longer drifts with the body.
+   0.85rem = 13.6px against a 16px body. */
+.post-content code {
+  font-size: 0.85rem;
+}
+
+/*
+ * Code: a real monospace face for Latin first — Cascadia Mono / Consolas also
+ * carry the box-drawing characters the ASCII trees in posts depend on — then a
+ * CJK face whose full-width advances keep Chinese comments at a uniform
+ * column. The generic `monospace` fallback still resolves to a full-width CJK
+ * face on every platform, so this degrades safely.
+ */
+:is(.md-content pre,
+  .md-content pre code,
+  .md-content code,
+  .md-content kbd,
+  .md-content samp,
+  .chroma,
+  .chroma *) {
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    'Cascadia Mono',
+    Consolas,
+    'Noto Sans Mono CJK SC',
+    'Sarasa Mono SC',
+    'Microsoft YaHei',
+    monospace;
 }
 
 .md-content pre code,
 .highlight pre.chroma code {
   display: block;
-  font-size: 0.95rem;
+  font-size: var(--code-size);
   line-height: 1.75;
   padding: 14px 16px;
   word-break: normal;
@@ -212,16 +207,81 @@ samp,
   color: var(--primary);
 }
 
-/* Scroll-to-top: always visible (neutralize the show-on-scroll script). */
+/* Scroll-to-top: always visible (neutralize the show-on-scroll script).
+   layouts/partials/footer.html still toggles .hidden on scroll; while this rule
+   stands, that toggle has no visible effect. */
 .top-link.hidden {
   visibility: visible;
   opacity: 1;
 }
 
-/* Keep the pair aligned when the scroll-to-top button is shifted up on
-   narrow list pages (mirrors PaperMod's .list .top-link rule). */
+/* PaperMod lifts .list .top-link by 5rem below 900px (core/zmedia.css) so it
+   clears the footer, and the rule this replaces lifted #theme-toggle to match.
+   Measured at 390x844 on the home page that put the two buttons at
+   bottom:196px and bottom:144px — over the post cards, not in the corner.
+   Neither button has a footer to dodge, so pin both to the corner. */
 @media screen and (max-width: 900px) {
+
+  .list .top-link,
   .list #theme-toggle {
-    transform: translateY(-5rem);
+    transform: none;
+  }
+}
+
+/* ---- Headings below h3 ---- */
+
+/* PaperMod runs h4/h5/h6 at 16/14/12px against an 18px body, so every heading
+   past h3 was smaller than the text it introduces, with a 33% cliff at h3->h4
+   and a 12px floor that is not readable in CJK. The steps below keep the
+   hierarchy and drop the inversion; h6 is unused across the current posts. */
+.md-content h4 {
+  font-size: 18px;
+}
+
+.md-content h5 {
+  font-size: 17px;
+}
+
+.md-content h6 {
+  font-size: 16px;
+}
+
+/* ---- Images ---- */
+
+/* The render-image hook emits intrinsic width/height so the browser can reserve
+   the box. height:auto keeps those attributes from fighting max-width when the
+   image is scaled down. */
+.md-content img {
+  height: auto;
+}
+
+/* ---- Skip link ---- */
+
+.skip-link {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  padding: 0.55rem 1rem;
+  background: var(--primary);
+  color: var(--theme);
+  border-radius: 0 0 var(--radius) 0;
+  transform: translateY(-120%);
+  transition: transform var(--ds-duration-fast) var(--ds-ease-out-soft);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* <main> carries tabindex="-1" so the skip link can move focus into it; it must
+   not paint a focus ring when it is focused that way. */
+.main:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
   }
 }

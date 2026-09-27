@@ -36,6 +36,18 @@
         return r.width >= 200; // skip small icons / avatars
     }
 
+    // ---- discoverability ----------------------------------------------
+    // The cursor is the only cue that a content image opens in place. Without
+    // .img-zoomable the feature is entirely invisible: the CSS rule that paints
+    // cursor:zoom-in only matches that class. Re-run whenever layout may have
+    // changed, since zoomable() reads the rendered width.
+    function markZoomable() {
+        var imgs = document.querySelectorAll(".md-content img");
+        for (var i = 0; i < imgs.length; i++) {
+            imgs[i].classList.toggle("img-zoomable", zoomable(imgs[i]));
+        }
+    }
+
     // ---- zoom in / out ------------------------------------------------
 
     function open(img) {
@@ -106,4 +118,12 @@
     window.addEventListener("scroll", function () { if (zoomedImg) close(); }, true);
     window.addEventListener("wheel", function () { if (zoomedImg) close(); }, { passive: true });
     window.addEventListener("resize", function () { if (zoomedImg) close(); });
+
+    // ---- init ----------------------------------------------------------
+    markZoomable();
+    window.addEventListener("load", markZoomable);
+    window.addEventListener("resize", markZoomable);
+    document.addEventListener("load", function (e) {
+        if (e.target && e.target.tagName === "IMG") markZoomable();
+    }, true);
 })();

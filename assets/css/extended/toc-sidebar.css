@@ -1,17 +1,41 @@
 /*
- * Project: minimal right-edge section rail (project-level override,
- * PaperMod untouched).
+ * Project: right-edge section rail — a faithful port of the DSH turn navigator.
  *
- * One tick per article heading, pinned to the right edge and vertically
- * centered. The current section's tick is solid and a marker glides to it;
- * ticks fade with their distance from the current one so the rail stays quiet
- * while reading (hover / touch / keyboard focus brings the full rail back).
- * The vertical gap is fitted to the viewport by toc-sidebar.js
- * (--toc-tick-gap), so long outlines stay on screen.
+ * Source of truth: @deepseek-ai/dsh-client-ui-chat, the TurnNavigator component
+ * (module css css$10 / TurnNavigator.js). Values below are copied from it:
  *
- * Also drives the thin top reading-progress bar.
- * Without JS the rail stays hidden and PaperMod's inline <details class="toc">
- * remains the fallback entry.
+ *   TURN_SPACING_PX = 10   fixed pitch between marks
+ *   RAIL_INSET_PX   = 6    padding above the first and below the last mark
+ *   FADE_PX         = 24   mask band reserved at a scrollable end
+ *   natural-height  = (count - 1) * pitch + 2 * inset
+ *   frame-height    = min(natural-height, max(0, band - 64px), 420px)
+ *   bar             12px default / 18px preview / 20px active, 2px tall, radius 2px
+ *   enter           0.15s ease-out opacity; reposition 0.22s cubic-bezier(.2,.8,.2,1)
+ *   bar transition  0.14s width, background-color
+ *   overflow        scrolls inside the frame, hidden scrollbar, masked ends
+ *   narrow          hidden entirely (DSH: @container width<=900px)
+ *
+ * The two load-bearing ideas, both absent from the previous implementation:
+ *
+ *  1. The whole rail is the pointer target, not each mark. Mark hit boxes are
+ *     irrelevant — `.toc-tick` is pointer-events:none and toc-sidebar.js maps
+ *     pointer Y to the nearest index arithmetically (itemAtPointer). That is why
+ *     a 10px pitch is usable at all, and why the marks can stay 2px thin.
+ *  2. Overflow scrolls instead of compressing. The previous version squeezed the
+ *     gap down to 8px to fit every heading, which is what made the targets
+ *     unusable; here the pitch is constant and the frame scrolls with masked ends.
+ *
+ * Deliberate deviations from DSH, all forced by the host page:
+ *  - position: fixed, not sticky-inside-a-zero-height-slot. DSH's slot works
+ *    because its container spans the whole pane; the blog's <main> is a centred
+ *    680px column, so a slot-relative `right` would sit inside the text.
+ *  - No `markUnloaded` / `markBusy` states: a blog has no loading or generating
+ *    marks. Kept: default / preview / active / focus-visible.
+ *  - Focus uses --primary plus an outline instead of DSH's blue
+ *    --dsw-alias-state-business-primary: this site's palette is deliberately
+ *    monochrome, and the outline is the actual focus indicator.
+ *  - --toc-rail-band subtracts the floating control cluster (156px) where DSH
+ *    subtracts its composer height.
  */
 
 /* ---- top reading progress bar ---- */
@@ -39,203 +63,224 @@
 /* ================= section rail ================= */
 
 .toc-rail {
+    --toc-pitch: 10px;
+    --toc-inset: 6px;
+    --toc-fade: 24px;
+    --toc-preview-height: 100px;
+    /* band = viewport minus the floating control pair at the bottom right */
+    --toc-rail-band: calc(100dvh - 156px);
+    --toc-count: 0;
+    --toc-natural-height: calc((var(--toc-count) - 1) * var(--toc-pitch) + 2 * var(--toc-inset));
+
     display: none;
+    position: fixed;
+    top: calc(var(--toc-rail-band) / 2);
+    right: 12px;
+    width: 28px;
+    height: min(var(--toc-natural-height), max(0px, calc(var(--toc-rail-band) - 64px)), 420px);
+    cursor: pointer;
+    transform: translateY(-50%);
+    z-index: 210;
+    transition: height 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 html.toc-rail-ready .toc-rail {
-    display: flex;
-    position: fixed;
-    right: 0.85rem;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 210;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: var(--toc-tick-gap, 12px);
-    --ease: var(--ds-ease-out-soft);
-    --tick-w-active: 34px; /* slot width, active bar width, marker width */
-    animation: toc-rail-in var(--ds-duration-base) var(--ease) both;
-}
-
-/* DSH turn-rail style entrance: fade + short rise */
-@keyframes toc-rail-in {
-    from {
-        opacity: 0;
-        transform: translateY(calc(-50% + 6px));
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(-50%);
-    }
-}
-
-/* Each tick is a fixed slot; the bar inside is right-anchored so it can grow
-   leftwards (DSH: .mark::before { right: 0 }).
-   Depth reads as length via --tick-w / --tick-w-hover (h3 uses the default). */
-.toc-tick {
-    --tick-w: 16px;
-    --tick-w-hover: 26px;
-    position: relative;
     display: block;
-    width: var(--tick-w-active);
-    height: 2px;
-    line-height: 0;
+}
+
+/* ---- scrollable mark column ---- */
+.toc-rail-scroller {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+}
+
+.toc-rail-scroller::-webkit-scrollbar {
+    display: none;
+}
+
+.toc-rail-scroller.toc-fade-top {
+    mask-image: linear-gradient(#0000 0, #000 24px 100%);
+}
+
+.toc-rail-scroller.toc-fade-bottom {
+    mask-image: linear-gradient(#000 0 calc(100% - 24px), #0000 100%);
+}
+
+.toc-rail-scroller.toc-fade-top.toc-fade-bottom {
+    mask-image: linear-gradient(#0000 0, #000 24px calc(100% - 24px), #0000 100%);
+}
+
+.toc-rail-marks {
+    height: var(--toc-natural-height);
+    position: relative;
+}
+
+/* one positioned row per heading; --toc-i is set by toc-sidebar.js in DOM order */
+.toc-tick-pos {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(var(--toc-i, 0) * var(--toc-pitch) + var(--toc-inset));
+    height: var(--toc-pitch);
+    transform: translateY(-50%);
+    transition: top 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: toc-mark-enter 0.15s ease-out;
+}
+
+/* The mark itself never receives the pointer: the whole rail does. It stays a
+   real <a> so it remains focusable and activatable from the keyboard. */
+.toc-tick {
+    position: absolute;
+    inset: 0 0 0 auto;
+    display: block;
+    width: 20px;
+    padding: 0;
+    background: 0 0;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    pointer-events: none;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
 }
 
-.toc-tick-h2 {
-    --tick-w: 26px;
-    --tick-w-hover: 34px;
-}
-
-:is(.toc-tick-h4, .toc-tick-h5, .toc-tick-h6) {
-    --tick-w: 10px;
-    --tick-w-hover: 20px;
-}
-
-/* a 2px bar is hard to hit: widen the hit area without changing the layout */
-.toc-tick::before {
-    content: "";
-    position: absolute;
-    inset: -6px -10px;
-}
-
 .toc-tick-bar {
-    --tick-fade: 0.32;
-    --tick-min: 0.06;
     position: absolute;
-    top: 0;
+    top: 50%;
     right: 0;
-    width: var(--tick-w);
+    width: 12px;
     height: 2px;
     border-radius: 2px;
     background: var(--tertiary);
-    opacity: clamp(var(--tick-min), calc(1 - var(--tick-dist, 0) * var(--tick-fade)), 1);
+    transform: translateY(-50%);
     transition:
-        width 0.14s var(--ease),
-        background-color 0.14s var(--ease),
-        opacity 0.22s var(--ease);
+        width 0.14s,
+        background-color 0.14s;
 }
 
-/* hover: like DSH's markPreview — the bar lengthens towards the left */
-.toc-tick:hover .toc-tick-bar {
-    width: var(--tick-w-hover);
+/* nearest mark under the pointer */
+.toc-tick.toc-preview .toc-tick-bar {
+    width: 18px;
     background: var(--secondary);
 }
 
-/* current section: the tick grows and turns solid */
+/* current section */
 .toc-tick.toc-active .toc-tick-bar {
-    width: var(--tick-w-active);
+    width: 20px;
     background: var(--primary);
 }
 
-/* pointer over the rail — or a finger on it (.toc-rail-reveal), or keyboard
-   focus inside it — brings the whole outline back */
-.toc-rail:hover .toc-tick-bar,
-.toc-rail:focus-within .toc-tick-bar,
-.toc-rail.toc-rail-reveal .toc-tick-bar {
-    opacity: 1;
-}
-
-/* marker that glides between ticks instead of jumping (DSH: top .22s) */
-.toc-rail-marker {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: var(--tick-w-active);
-    height: 2px;
-    border-radius: 2px;
+.toc-tick:focus-visible .toc-tick-bar {
+    width: 20px;
     background: var(--primary);
-    opacity: 0;
-    pointer-events: none;
-    will-change: transform;
-    transition:
-        transform 0.22s var(--ease),
-        opacity 0.15s var(--ease);
 }
 
-/* hover title, floating to the left of the rail */
-.toc-tick-label {
+.toc-tick:focus-visible {
+    outline: 1px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ---- hover preview panel ---- */
+.toc-rail-preview {
     position: absolute;
-    top: 50%;
-    right: calc(100% + 0.55rem);
-    max-width: 15rem;
-    padding: 0.15rem 0.45rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    right: calc(100% + 10px);
+    box-sizing: border-box;
+    width: 300px;
+    max-width: calc(100vw - 120px);
+    max-height: var(--toc-preview-height);
+    padding: 10px 12px;
+    border-radius: 10px;
     background: var(--theme);
-    box-shadow: 0 4px 14px rgb(0 0 0 / 0.1);
     color: var(--primary);
-    font-size: 0.78rem;
-    line-height: 1.5;
-    white-space: nowrap;
+    box-shadow:
+        0 0 0 0.5px var(--border),
+        0 3px 8px 0 rgb(0 0 0 / 0.03),
+        0 0 16px 0 rgb(0 0 0 / 0.02);
     overflow: hidden;
-    text-overflow: ellipsis;
-    opacity: 0;
-    visibility: hidden;
     pointer-events: none;
-    transform: translateY(-50%) translateX(6px);
-    transition:
-        opacity 0.14s var(--ease),
-        transform 0.14s var(--ease),
-        visibility 0.14s var(--ease);
+    top: clamp(0px,
+        calc(var(--toc-hover-pos, 0px) - var(--toc-preview-height) / 2),
+        calc(100% - var(--toc-preview-height)));
+    transition: top 0.14s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: toc-preview-enter 0.12s ease-out;
 }
 
-.toc-tick:hover .toc-tick-label,
-.toc-tick:focus-visible .toc-tick-label {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(-50%) translateX(0);
-}
-
-/* touch devices have no hover: no title tooltip, and a higher opacity floor
-   so the rail stays discoverable */
-@media (hover: none) {
-    .toc-tick-label {
-        display: none;
-    }
-
-    .toc-tick-bar {
-        --tick-fade: 0.3;
-        --tick-min: 0.14;
-    }
-}
-
-/* keep the rail out of the way on small screens */
-@media (max-width: 600px) {
-    html.toc-rail-ready .toc-rail {
-        right: 0.4rem;
-        gap: var(--toc-tick-gap, 9px);
-        --tick-w-active: 24px;
-    }
-
-    .toc-tick {
-        --tick-w: 12px;
-        --tick-w-hover: 20px;
-    }
-
-    .toc-tick-h2 {
-        --tick-w: 18px;
-        --tick-w-hover: 24px;
-    }
-
-    :is(.toc-tick-h4, .toc-tick-h5, .toc-tick-h6) {
-        --tick-w: 8px;
-        --tick-w-hover: 16px;
-    }
-}
-
-/* once JS is active the inline <details class="toc"> steps aside */
-body.toc-enhanced article.post-single details.toc {
+.toc-rail-preview[hidden] {
     display: none;
 }
 
+.toc-preview-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 20px;
+}
+
+.toc-preview-body {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    margin-top: 4px;
+    color: var(--secondary);
+    font-size: 12px;
+    line-height: 18px;
+}
+
+@keyframes toc-mark-enter {
+    0% {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes toc-preview-enter {
+    0% {
+        opacity: 0;
+        transform: translate(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(0);
+    }
+}
+
+/* DSH hides the rail when its container drops to 900px. The blog's content
+   column is viewport-driven, so the viewport is the honest equivalent. Measured:
+   below 840px the rail's box crosses the text column; 900px leaves margin. */
+@media (max-width: 899px) {
+    html.toc-rail-ready .toc-rail {
+        display: none;
+    }
+}
+
+/* A 10px pitch cannot be hit by a finger, and the preview is hover-driven. */
+@media (hover: none), (pointer: coarse) {
+    html.toc-rail-ready .toc-rail {
+        display: none;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
+
+    .toc-rail,
+    .toc-rail-scroller,
+    .toc-tick-pos,
     .toc-tick-bar,
-    .toc-tick-label,
+    .toc-rail-preview,
     .toc-progress {
+        scroll-behavior: auto;
         transition: none;
+        animation: none;
     }
 }

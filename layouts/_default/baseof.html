@@ -1,0 +1,41 @@
+{{- if lt hugo.Version "0.146.0" }}
+{{- errorf "=> hugo v0.146.0 or greater is required for hugo-PaperMod to build " }}
+{{- end -}}
+
+<!DOCTYPE html>
+{{- $theme := site.Params.defaultTheme | default "auto" }}
+{{- if eq $theme "dark" }}
+<html lang="{{ site.Language }}" dir="{{ .Language.Direction | default "auto" }}" data-theme="dark">
+{{- else if eq $theme "light" }}
+<html lang="{{ site.Language }}" dir="{{ .Language.Direction | default "auto" }}" data-theme="light">
+{{- else }}
+<html lang="{{ site.Language }}" dir="{{ .Language.Direction | default "auto" }}" data-theme="auto">
+{{- end }}
+
+{{- /*
+   Project override of the vendored PaperMod baseof.html.
+   Only change: a skip link as the first focusable element, and id="main" on
+   <main> so it has a target. Without it a keyboard user has to tab through the
+   logo plus four nav links on every page. The <main> element carries
+   tabindex="-1" so the link can move focus there without adding a tab stop.
+   Keep this file in sync with themes/PaperMod/layouts/_default/baseof.html.
+*/ -}}
+
+<head>
+    {{- partial "head.html" . }}
+</head>
+
+{{- if (or (ne .Kind `page` ) (eq .Layout `archives`) (eq .Layout `search`)) }}
+<body class="list" id="top">
+{{- else }}
+<body id="top">
+{{- end }}
+    <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
+    {{ partialCached "header.html" . .Page -}}
+    <main class="main" id="main" tabindex="-1">
+        {{- block "main" . }}{{ end }}
+    </main>
+    {{ partialCached "footer.html" . .Layout .Kind (.Param "hideFooter") (.Param "ShowCodeCopyButtons") -}}
+</body>
+
+</html>

@@ -71,7 +71,7 @@ params:
   hidemeta: false
   hideSummary: false
   showtoc: true
-  tocopen: true # expanded by default across all posts
+  tocopen: false # collapsed: the right-edge rail carries orientation, this is the full outline
 
   # profile-mode
   profileMode:

@@ -46,17 +46,72 @@
         }
     }
 
+    /* Scroll to an anchor and make sure it lands there, and stays there.
+       Images with no reserved box — the raw <img> tags still in a few posts —
+       grow the document *after* the smooth scroll has finished, not during it:
+       measured on one post the heading settled correctly and then drifted
+       149px when a lazy image finally laid out. So this watches for a bounded
+       window and re-aligns with an instant jump (which cannot go stale)
+       whenever the page is still and the heading has moved. Any real input
+       from the reader ends the watch immediately. */
+    function scrollToTarget(target) {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            target.scrollIntoView();
+            return;
+        }
+        var margin = parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0;
+        target.scrollIntoView({ behavior: "smooth" });
+
+        var lastY = -1;
+        var still = 0;
+        var corrections = 0;
+        var deadline = Date.now() + 6000;
+
+        function stop() {
+            window.clearInterval(poll);
+            window.removeEventListener("wheel", stop);
+            window.removeEventListener("touchstart", stop);
+            window.removeEventListener("keydown", stop);
+        }
+
+        var poll = window.setInterval(function () {
+            var y = window.pageYOffset;
+            if (Math.abs(y - lastY) < 1) still += 1;
+            else still = 0;
+            lastY = y;
+
+            /* A heading near the end of a document can never reach the top —
+               the page runs out of scroll first. Correcting there would spin
+               forever trying to close a gap that cannot close. */
+            var maxY = document.documentElement.scrollHeight - window.innerHeight;
+            var pinned = y >= maxY - 1;
+
+            /* still >= 6 means the page has not moved for ~360ms */
+            if (still >= 6 && !pinned && corrections < 4 &&
+                Math.abs(target.getBoundingClientRect().top - margin) > 2) {
+                corrections += 1;
+                still = 0;
+                target.scrollIntoView();
+                return;
+            }
+            /* settled and correct for ~3.6s: nothing left to watch for */
+            if (Date.now() >= deadline || still > 60) stop();
+        }, 60);
+
+        window.addEventListener("wheel", stop, { passive: true });
+        window.addEventListener("touchstart", stop, { passive: true });
+        window.addEventListener("keydown", stop);
+    }
+
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener("click", function (e) {
             e.preventDefault();
             var id = this.getAttribute("href").substr(1);
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
-                    behavior: "smooth"
-                });
-            } else {
-                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
-            }
+            /* a bare "#" or a stale anchor would make querySelector return null
+               and throw; fall through to the browser default instead */
+            var target = id ? document.querySelector(`[id='${decodeURIComponent(id)}']`) : null;
+            if (!target) return;
+            scrollToTarget(target);
             if (id === "top") {
                 history.replaceState(null, null, " ");
             } else {
@@ -69,15 +124,17 @@
 
 {{- if (not site.Params.disableScrollToTop) }}
 <script>
+    /* addEventListener, not window.onscroll = … : the assignment form silently
+       replaces any other handler on the same event. */
     var toplink = document.getElementById("top-link");
-    window.onscroll = function () {
+    window.addEventListener("scroll", function () {
         const scrollThreshold = window.innerHeight;
         if (document.body.scrollTop > scrollThreshold || document.documentElement.scrollTop > scrollThreshold) {
             toplink.classList.remove("hidden");
         } else {
             toplink.classList.add("hidden");
         }
-    };
+    }, { passive: true });
 
 </script>
 {{- end }}

@@ -52,3 +52,6 @@
 
 - id: search
   translation: "搜索"
+
+- id: skip_to_content
+  translation: "跳到正文"

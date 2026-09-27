@@ -29,3 +29,10 @@
     opacity: 1;
     pointer-events: auto;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .md-content img.img-zoomed,
+    #img-zoom-overlay {
+        transition: none;
+    }
+}

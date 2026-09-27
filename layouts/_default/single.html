@@ -70,12 +70,23 @@
   {{- end }}
 </article>
 
-{{- /* Minimal right-edge section rail: one tick per heading, the current
-       section's tick grows and darkens. Hover reveals the title, click jumps.
-       CSS/JS gated; PaperMod's inline <details class="toc"> stays as fallback. */}}
+{{- /* Right-edge section rail, ported from the DSH turn navigator: a scrollable
+       column of marks at a fixed 10px pitch, with a pointer-driven preview panel.
+       The whole rail is the pointer target; the marks themselves are
+       pointer-events:none and exist for keyboard and screen readers.
+       CSS/JS gated; PaperMod's collapsed <details class="toc"> above the article
+       stays as the outline and the no-JS fallback. */}}
 {{- if and (.Param "ShowToc") .Fragments.Headings }}
 <nav class="toc-rail" id="toc-rail" aria-label="{{ i18n "toc" | default "Table of Contents" }}">
-  {{- partial "toc_ticks.html" .Fragments.Headings }}
+  <div class="toc-rail-scroller">
+    <div class="toc-rail-marks">
+      {{- partial "toc_ticks.html" .Fragments.Headings }}
+    </div>
+  </div>
+  <div class="toc-rail-preview" id="toc-rail-preview" hidden>
+    <div class="toc-preview-title"></div>
+    <div class="toc-preview-body"></div>
+  </div>
 </nav>
 {{- end }}
 
