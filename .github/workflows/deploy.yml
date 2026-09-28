@@ -42,4 +42,4 @@ jobs:
 
       - name: Deploy public directory
         run: |
-          rsync -az --delete public/ ubuntu@124.221.38.221:/var/www/blog/
+          rsync -az --delete public/ ubuntu@124.221.38.221:/
