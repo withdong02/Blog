@@ -1,0 +1,63 @@
+{{- /*
+   Project override of themes/PaperMod/layouts/partials/home_info.html.
+
+   Only change: the 蕫冬咚 figure (fluid avatar) is added between the intro text
+   and the social icons. Title, content and social icons are byte-for-byte the
+   theme's, so this file stays diffable against the vendored copy; keep it in
+   sync when the theme partial changes.
+
+   Why the figure is a <button>: a click is the whole interaction, so it must be
+   reachable and announced as a control. It ships disabled and with the "static"
+   label, which is also the no-JavaScript state — a disabled button is not
+   focusable, so nobody lands on a control that cannot do anything. The script
+   (assets/js/fluid-ip.js) decides whether the device can run the animation,
+   then enables the button and swaps the label. The figure itself is real SVG in
+   the HTML: with JavaScript off it is still drawn, just not clickable.
+
+   The SVG is the confirmed sample (docs/design/fluid-ip-demo.html): one
+   irregular blob with a dent and a bump, two large round eyes, and a goo filter
+   so echoes fuse with the body instead of stacking. The viewBox keeps room
+   for their travel, and the filter region covers their paths. Echo paths and
+   their temporary forms are created from the specs in fluid-ip.js.
+
+   Colours: the body, echoes and forms take PaperMod's --primary, the eyes take the
+   home-page background (--code-bg in light, --theme in dark — see
+   assets/css/extended/fluid-ip.css). Nothing here hardcodes a colour.
+*/ -}}
+{{- with site.Params.homeInfoParams }}
+<div id="fluid-portal" class="fluid-portal" role="region" aria-label="博客入口"></div>
+<article class="first-entry home-info fluid-ip-home-info">
+    <header class="entry-header">
+        <h1>{{ .Title | markdownify }}</h1>
+    </header>
+    <div class="entry-content md-content">
+        {{ $opts := dict "display" "block" }}
+        {{ .Content | $.Page.RenderString $opts }}
+    </div>
+    <button id="fluid-ip-orb" class="fluid-ip-orb" type="button" disabled
+        aria-label="蕫冬咚：一团不规则的流体，有两只圆眼睛"
+        data-label-action="放出灵感；文字和图案展开后，再次点击可收回">
+        <svg class="fluid-ip-svg" viewBox="-60 -140 800 680" aria-hidden="true" focusable="false">
+            <defs>
+                <filter id="fluid-ip-goo" x="-165" y="-140" width="900" height="760" filterUnits="userSpaceOnUse"
+                    color-interpolation-filters="sRGB">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="11" result="blur" />
+                    <feColorMatrix in="blur" type="matrix"
+                        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" />
+                </filter>
+            </defs>
+            <g class="fluid-ip-ink" filter="url(#fluid-ip-goo)">
+                <path
+                    d="M260 0 C341 -2 385 15 374 59 C366 89 383 103 418 94 C451 87 478 139 493 189 C515 260 514 317 498 368 C477 435 426 462 365 478 C288 497 178 482 104 455 C40 433 9 405 1 359 C-5 323 2 284 27 246 C36 232 30 209 35 185 C44 107 105 39 183 13 C213 3 236 0 260 0 Z" />
+                <g class="fluid-ip-echoes"></g>
+            </g>
+            <g class="fluid-ip-forms fluid-ip-ink"></g>
+            <circle class="fluid-ip-eye" cx="171" cy="314" r="25" />
+            <circle class="fluid-ip-eye" cx="350" cy="314" r="25" />
+        </svg>
+    </button>
+    <footer class="entry-footer">
+        {{ partial "social_icons.html" (dict "align" site.Params.homeInfoParams.AlignSocialIconsTo) }}
+    </footer>
+</article>
+{{- end -}}

@@ -1,0 +1,175 @@
+/*
+ * Project: home-page fluid avatar (蕫冬咚) — see docs/design/fluid-ip.md.
+ *
+ * Large interactive figure in the home intro; quiet marks in the shared
+ * navigation and article signoff. No floating companions over the content.
+ *
+ * Two-tone skin: PaperMod's --primary for the body and the echoes, and the
+ * home-page background for the eyes, which is what makes them read as holes.
+ * The home page is a list page, so that background is --code-bg in light and
+ * --theme in dark (themes/PaperMod/assets/css/core/theme-vars.css). Both come
+ * from the theme, so light/dark and the theme toggle need no extra wiring —
+ * the fills are re-resolved mid-animation too.
+ *
+ * Layout is width-driven, interaction is capability-driven. Below 900px the
+ * figure sits below the intro text; from 900px up it sits beside it. Only a
+ * fine pointer that can hover, on a wide viewport, without reduced motion,
+ * gets a clickable figure — and that decision is made by fluid-ip.js, which
+ * enables the button. CSS just follows the button's disabled state, so both
+ * sides share one threshold.
+ */
+
+/* ---- The figure ------------------------------------------------------- */
+
+.fluid-mark {
+    display: block;
+    flex: none;
+    overflow: visible;
+    fill: var(--primary);
+}
+
+.fluid-mark-eyes { fill: var(--theme); }
+.list .fluid-mark-eyes { fill: var(--code-bg); }
+:root[data-theme="dark"] .fluid-mark-eyes { fill: var(--theme); }
+
+.fluid-mark-body, .fluid-mark-eyes {
+    transform-origin: 250px 380px;
+    transition: transform 650ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.fluid-signoff {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin: 56px 0 36px;
+    padding: 28px 0;
+    border-block: 1px solid var(--border);
+    color: var(--primary);
+}
+
+.fluid-signoff-figure {
+    position: relative;
+    flex: none;
+    width: 94px;
+}
+
+/* The body rests in a small pool of its own ink. */
+.fluid-signoff-figure::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    right: -6px;
+    bottom: 2px;
+    height: 6px;
+    background: var(--primary);
+    border-radius: 50%;
+}
+
+.fluid-signoff .fluid-mark { width: 94px; height: 92px; }
+.fluid-signoff-copy { display: grid; gap: 8px; }
+.fluid-signoff-note { color: var(--secondary); font-size: 14px; }
+.fluid-signoff-link { font-size: 19px; font-weight: 600; }
+.fluid-signoff-link > span { display: inline-block; margin-left: 8px; }
+.fluid-signoff:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; }
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .logo a:hover .fluid-mark-eyes,
+    .fluid-signoff:hover .fluid-mark-eyes { transform: translate(22px, -12px); }
+    .fluid-signoff:hover .fluid-mark-body { transform: skewX(-4deg) scale(1.035, .98); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .logo a:focus-visible .fluid-mark-eyes,
+    .fluid-signoff:focus-visible .fluid-mark-eyes { transform: translate(22px, -12px); }
+}
+
+@media (max-width: 480px) {
+    .logo .fluid-mark { width: 28px; height: 28px; }
+    .fluid-signoff { margin-top: 40px; gap: 20px; padding-block: 22px; }
+    .fluid-signoff-figure { width: 76px; }
+    .fluid-signoff .fluid-mark { width: 76px; height: 75px; }
+}
+
+.fluid-ip-orb {
+    display: block;
+    width: min(60vw, 260px);
+    margin: 1.25rem auto 0;
+    padding: 0;
+    border: 0;
+    border-radius: 1rem;
+    background: none;
+    color: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* The figure is two flat tones, so it must not be dimmed when the button is
+   disabled — that state means "static", not "unavailable-looking". */
+.fluid-ip-orb:disabled {
+    opacity: 1;
+}
+
+.fluid-ip-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.fluid-ip-ink {
+    fill: var(--primary);
+}
+
+.fluid-ip-form {
+    pointer-events: none;
+}
+
+.fluid-ip-form-text {
+    font: 700 92px system-ui, sans-serif;
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+
+.fluid-ip-eye {
+    fill: var(--code-bg);
+}
+
+:root[data-theme="dark"] .fluid-ip-eye {
+    fill: var(--theme);
+}
+
+/* Keyboard focus has to be visible on the figure itself, not only around a box
+   that has no background. */
+.fluid-ip-orb:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+}
+
+/* ---- Desktop: text and figure side by side ---------------------------- */
+
+@media screen and (min-width: 900px) {
+    .fluid-ip-home-info {
+        padding-right: 240px;
+    }
+
+    .fluid-ip-home-info .fluid-ip-orb {
+        position: absolute;
+        /* The SVG keeps ~88px on its right for echoes; align the painted body
+           with the article column instead of centering its empty viewBox. */
+        right: -88px;
+        top: 50%;
+        transform: translateY(-50%);
+        margin: 0;
+        width: 300px;
+    }
+}
+
+/* ---- Interaction affordance ------------------------------------------- */
+
+/* Same threshold as fluid-ip.js: wide viewport, hovering fine pointer, motion
+   allowed. The :not(:disabled) half means the script is the single authority —
+   if it has not enabled the button, nothing here applies. */
+@media screen and (min-width: 900px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .fluid-ip-orb:not(:disabled) {
+        cursor: pointer;
+    }
+}

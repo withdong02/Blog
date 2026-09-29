@@ -1,0 +1,89 @@
+/* The same character occupies the entrance and then docks in the blog intro. */
+:root {
+    /* Opening the portal locks scrolling; preserve the reading column's width. */
+    scrollbar-gutter: stable;
+}
+
+.fluid-portal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    place-items: center;
+    /* Same surface as the list page below (theme-vars.css `.list`), so the
+       reserved scrollbar gutter and the eyes match the entrance. */
+    background: var(--code-bg);
+    overflow: hidden;
+}
+
+:root[data-theme="dark"] .fluid-portal {
+    background: var(--theme);
+}
+
+.fluid-portal-active {
+    overflow: hidden;
+}
+
+.fluid-portal-active .fluid-portal {
+    display: grid;
+}
+
+.fluid-portal-active #theme-toggle,
+.fluid-portal-active .top-link,
+.fluid-portal-active .skip-link {
+    visibility: hidden;
+}
+
+/* Real controls are revealed by the ink choreography; the portal still owns
+   pointer input until it is finished. No permanent overlay remains afterward. */
+.fluid-composing #theme-toggle,
+.fluid-composing .top-link {
+    visibility: visible;
+}
+
+.fluid-portal .fluid-ip-orb {
+    width: min(64vw, 500px);
+    margin: 0;
+    /* SVG viewBox reserves room for echoes; shift the visible body to center. */
+    transform: translate(11.25%, -6%);
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.fluid-ip-eye {
+    transition: transform 190ms ease-out;
+}
+
+.fluid-ip-dock[hidden] {
+    display: none;
+}
+
+.fluid-ip-dock {
+    display: block;
+    width: min(60vw, 260px);
+    aspect-ratio: 800 / 680;
+    margin: 1.25rem auto 0;
+}
+
+@media screen and (min-width: 900px) {
+    .fluid-ip-home-info .fluid-ip-dock {
+        position: absolute;
+        right: -88px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 300px;
+        margin: 0;
+    }
+}
+
+@media screen and (max-width: 899px) {
+    .fluid-portal .fluid-ip-orb {
+        width: min(82vw, 430px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fluid-ip-eye {
+        transition: none;
+    }
+}

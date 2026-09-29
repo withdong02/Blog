@@ -1,0 +1,3 @@
+{{- /* Parser-blocking so the entry surface is ready before first paint. */ -}}
+{{- $transition := resources.Get "js/fluid-transition.js" | minify | fingerprint "sha256" }}
+<script src="{{ $transition.RelPermalink }}" integrity="{{ $transition.Data.Integrity }}" data-home-path="{{ site.Home.RelPermalink }}"></script>

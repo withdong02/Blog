@@ -31,6 +31,9 @@ services:
     ID: G-W7C1XDVYLL
 
 params:
+  label:
+    iconSVG: >-
+      <svg class="fluid-mark" viewBox="-20 -20 550 540" width="34" height="34" aria-hidden="true" focusable="false"><path class="fluid-mark-body" d="M260 0 C341 -2 385 15 374 59 C366 89 383 103 418 94 C451 87 478 139 493 189 C515 260 514 317 498 368 C477 435 426 462 365 478 C288 497 178 482 104 455 C40 433 9 405 1 359 C-5 323 2 284 27 246 C36 232 30 209 35 185 C44 107 105 39 183 13 C213 3 236 0 260 0 Z"/><g class="fluid-mark-eyes"><circle cx="171" cy="314" r="25"/><circle cx="350" cy="314" r="25"/></g></svg>
   env: production # to enable google analytics, opengraph, twitter-cards and schema.
   title: withdong02 
   description: "分享 Java、算法、Web开发等技术心得，记录学习成长之路"

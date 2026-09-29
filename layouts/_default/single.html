@@ -51,6 +51,12 @@
   {{- end }}
 
   <footer class="post-footer">
+    {{- if eq .Section "posts" }}
+    <a class="fluid-signoff" href="{{ site.Home.RelPermalink }}#articles">
+      <span class="fluid-signoff-figure">{{ site.Params.label.iconSVG | safeHTML }}</span>
+      <span class="fluid-signoff-copy"><span class="fluid-signoff-note">这一页，先读到这里。</span><span class="fluid-signoff-link">再去翻翻 <span aria-hidden="true">↗</span></span></span>
+    </a>
+    {{- end }}
     {{- $tags := .Language.Params.Taxonomies.tag | default "tags" }}
     <ul class="post-tags">
       {{- range ($.GetTerms $tags) }}

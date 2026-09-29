@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>回声小团 · 动画小样</title>
+  <style>
+    :root { color-scheme: light; --paper: #f8f7f3; --ink: #202020; }
+    html[data-theme="dark"] { color-scheme: dark; --paper: #202020; --ink: #f8f7f3; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: var(--paper); color: var(--ink); font: 16px system-ui, sans-serif; transition: background .25s, color .25s; }
+    main { display: grid; justify-items: center; gap: 1.5rem; padding: 2rem; }
+    #orb { border: 0; background: none; color: inherit; padding: 2rem; cursor: pointer; border-radius: 2rem; }
+    #orb:focus-visible, #theme:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+    svg { display: block; width: min(80vw, 420px); height: auto; overflow: visible; }
+    .ink { fill: var(--ink); }
+    .paper { fill: var(--paper); }
+    .controls { display: flex; align-items: center; gap: 1rem; font-size: .9rem; }
+    #theme { border: 1px solid currentColor; border-radius: 99px; color: inherit; background: none; padding: .5rem .9rem; cursor: pointer; font: inherit; }
+    p { margin: 0; opacity: .65; }
+    @media (prefers-reduced-motion: reduce) { body { transition: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <button id="orb" type="button" aria-label="点击让回声小团分裂并融回">
+      <svg viewBox="-165 -140 900 760" role="img" aria-label="有两只圆眼睛的回声小团">
+        <defs>
+          <filter id="goo" x="-165" y="-140" width="900" height="760" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="11" result="blur" />
+            <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" />
+          </filter>
+        </defs>
+        <g class="ink" filter="url(#goo)">
+          <path d="M260 0 C341 -2 385 15 374 59 C366 89 383 103 418 94 C451 87 478 139 493 189 C515 260 514 317 498 368 C477 435 426 462 365 478 C288 497 178 482 104 455 C40 433 9 405 1 359 C-5 323 2 284 27 246 C36 232 30 209 35 185 C44 107 105 39 183 13 C213 3 236 0 260 0 Z" />
+          <g id="echoes"></g>
+        </g>
+        <circle class="paper" cx="171" cy="314" r="25" />
+        <circle class="paper" cx="350" cy="314" r="25" />
+      </svg>
+    </button>
+    <div class="controls">
+      <button id="theme" type="button" aria-label="切换明暗主题">切换明暗</button>
+      <p>点击小团，看看回声如何回来</p>
+    </div>
+  </main>
+  <script>
+    const orb = document.querySelector('#orb');
+    const specs = [
+      { from: [365, 85], to: [550, -55], radius: 54 },
+      { from: [470, 190], to: [640, 140], radius: 46 },
+      { from: [475, 345], to: [610, 460], radius: 40 }
+    ];
+    const echoLayer = document.querySelector('#echoes');
+    const echoes = specs.map(() => {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      echoLayer.append(path);
+      return path;
+    });
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    let playing = false;
+
+    function blobPath(cx, cy, radius, phase, stretch, angle) {
+      if (radius < .1) return '';
+      const points = Array.from({ length: 8 }, (_, i) => {
+        const a = i * Math.PI / 4;
+        const ripple = 1 + .13 * Math.sin(3 * a + phase) + .08 * Math.cos(5 * a - phase * .7);
+        const along = Math.cos(a) * radius * ripple * stretch;
+        const across = Math.sin(a) * radius * ripple / stretch;
+        return [cx + along * Math.cos(angle) - across * Math.sin(angle), cy + along * Math.sin(angle) + across * Math.cos(angle)];
+      });
+      const mid = (a, b) => `${((a[0] + b[0]) / 2).toFixed(1)} ${((a[1] + b[1]) / 2).toFixed(1)}`;
+      return `M ${mid(points[7], points[0])} ` + points.map((point, i) => `Q ${point[0].toFixed(1)} ${point[1].toFixed(1)} ${mid(point, points[(i + 1) % 8])}`).join(' ') + ' Z';
+    }
+
+    orb.addEventListener('click', () => {
+      if (playing || reducedMotion.matches) return;
+      playing = true;
+      const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(2 - 2 * x, 3) / 2;
+      const duration = 4200;
+      let started;
+      function frame(now) {
+        started ??= now;
+        const elapsed = now - started;
+        echoes.forEach((echo, i) => {
+          const t = Math.max(0, Math.min(1, (elapsed - i * 180) / duration));
+          const p = t < .43 ? ease(t / .43) : t < .57 ? 1 : 1 - ease((t - .57) / .43);
+          const { from, to, radius } = specs[i];
+          const size = radius * Math.min(1, ease(Math.min(1, t / .27)), ease(Math.min(1, (1 - t) / .27)));
+          const phase = elapsed / 620 + i * 1.7;
+          const stretch = 1 + .2 * Math.sin(Math.PI * p) + .07 * Math.sin(phase * 1.7);
+          const cx = from[0] + (to[0] - from[0]) * p;
+          const cy = from[1] + (to[1] - from[1]) * p - 25 * Math.sin(Math.PI * p);
+          echo.setAttribute('d', blobPath(cx, cy, size, phase, stretch, Math.atan2(to[1] - from[1], to[0] - from[0])));
+        });
+        if (elapsed < duration + (echoes.length - 1) * 180) requestAnimationFrame(frame);
+        else { echoes.forEach(echo => echo.setAttribute('d', '')); playing = false; }
+      }
+      requestAnimationFrame(frame);
+    });
+
+    document.querySelector('#theme').addEventListener('click', () => {
+      document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    });
+  </script>
+</body>
+</html>

@@ -1,6 +1,8 @@
-{{- /* DeepSeek-style starfield particle background — see static/js/starfield.js */ -}}
-<canvas id="starfield-canvas" aria-hidden="true"></canvas>
-<script src="{{ "js/starfield.js" | relURL }}" defer></script>
+{{- /* The DeepSeek-style starfield background is switched off site-wide as of the
+       fluid-IP first release (docs/design/fluid-ip.md): its canvas and script
+       injection lived here and are gone. static/js/starfield.js and
+       assets/css/extended/starfield.css are kept on disk so it can be restored
+       by putting those two lines back. */ -}}
 {{- /* In-place click-to-zoom for article images — see static/js/img-zoom.js */ -}}
 <script src="{{ "js/img-zoom.js" | relURL }}" defer></script>
 {{- /* Reading-progress section rail (right-edge ticks + thin top progress bar)
@@ -10,6 +12,20 @@
        in sync. */ -}}
 {{- $tocJs := resources.Get "js/toc-sidebar.js" | minify | fingerprint "sha256" }}
 <script src="{{ $tocJs.RelPermalink }}" integrity="{{ $tocJs.Data.Integrity }}" defer></script>
+{{- /* Shared ink primitives (window.FluidInk) for the character's scenes —
+       see docs/design/fluid-ink.md. Site-wide and before fluid-ip.js. */ -}}
+{{- $fluidInkJs := resources.Get "js/fluid-ink.js" | minify | fingerprint "sha256" }}
+<script src="{{ $fluidInkJs.RelPermalink }}" integrity="{{ $fluidInkJs.Data.Integrity }}" defer></script>
+{{- /* Home-page fluid avatar (蕫冬咚) — see assets/js/fluid-ip.js and
+       docs/design/fluid-ip.md. Only the home page carries the figure, so only
+       the home page loads the script; on the paginated pages past the first
+       there is no figure and the script exits on its first line. Same Hugo
+       asset pipeline as toc-sidebar.js above: the fingerprinted URL changes
+       with the script. */ -}}
+{{- if .IsHome }}
+{{- $fluidIpJs := resources.Get "js/fluid-ip.js" | minify | fingerprint "sha256" }}
+<script src="{{ $fluidIpJs.RelPermalink }}" integrity="{{ $fluidIpJs.Data.Integrity }}" defer></script>
+{{- end }}
 {{- /* Theme toggle: move the button out of the header to the end of <body>,
        where custom.css styles it as a fixed bottom-right round button.
        Smooth the light/dark switch: PaperMod flips data-theme instantly, so
