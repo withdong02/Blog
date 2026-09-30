@@ -1,3 +1,6 @@
+# Session data for the WorkBuddy workspace: daily logs and project memory.
+.workbuddy/
+
 public/
 
 # Hugo build lock: rewritten on every build, zero bytes, no value in history.

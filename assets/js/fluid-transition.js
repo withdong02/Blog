@@ -74,13 +74,19 @@
                 eyes[i].style.transform = "translate(" + x + "px," + y + "px)";
             }
         }
+        var lookRaf = 0;
         window.addEventListener("pointermove", function (event) {
             if (!fine.matches || reduced.matches || entering) return;
-            var rect = orb.getBoundingClientRect();
-            if (rect.bottom < 0 || rect.top > window.innerHeight) return;
-            var x = Math.max(-10, Math.min(10, (event.clientX - rect.left - rect.width * 0.39) / 22));
-            var y = Math.max(-8, Math.min(8, (event.clientY - rect.top - rect.height * 0.56) / 25));
-            look(x.toFixed(1), y.toFixed(1));
+            var cx = event.clientX, cy = event.clientY;
+            if (lookRaf) return;
+            lookRaf = requestAnimationFrame(function () {
+                lookRaf = 0;
+                var rect = orb.getBoundingClientRect();
+                if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+                var x = Math.max(-10, Math.min(10, (cx - rect.left - rect.width * 0.39) / 22));
+                var y = Math.max(-8, Math.min(8, (cy - rect.top - rect.height * 0.56) / 25));
+                look(x.toFixed(1), y.toFixed(1));
+            });
         });
         window.addEventListener("mouseout", function (event) {
             if (!event.relatedTarget) look(0, 0);
@@ -119,6 +125,10 @@
 
         function mix(a, b, k) {
             return a + (b - a) * k;
+        }
+
+        function attr(node, name, value) {
+            if (node.getAttribute(name) !== value) node.setAttribute(name, value);
         }
 
         function buildScene() {
@@ -170,7 +180,7 @@
                 var speed = x > 0 && x < 1 ? (x < 0.5 ? 4 * x * x : Math.pow(2 - 2 * x, 2)) : 0;
                 var lift = bodyBend * Math.sin(Math.PI * p);
                 var s = 1 + (ratio - 1) * p;
-                var squash = t < 0.14 ? 0.045 * Math.sin(Math.PI * t / 0.14) : 0;
+                var squash = t < 0.14 ? 0.045 * Math.pow(Math.sin(Math.PI * t / 0.14), 2) : 0;
                 var e = 1 + 0.06 * speed;
                 var cos = travelDir[0];
                 var sin = travelDir[1];
@@ -251,9 +261,14 @@
                 };
                 e.r = e.b + 0.11;
                 e.l = e.r + 0.38;
-                e.s = e.l + 0.07;
+                e.s = e.l + 0.10;
                 var release = bodyAt(e.r);
                 e.P = release.toScreen(e.u1);
+                // The released ink retains the body's velocity. Starting a
+                // fresh ease-in here would visibly stop it at the neck.
+                var before = bodyAt(e.r - 0.0001).toScreen(e.u1);
+                var after = bodyAt(e.r + 0.0001).toScreen(e.u1);
+                e.V = [(after[0] - before[0]) / 0.0002, (after[1] - before[1]) / 0.0002];
                 e.R0 = ECHO_R * release.scale;
                 var arc = bow(e.P, T);
                 var mid = [(e.P[0] + T[0]) / 2, (e.P[1] + T[1]) / 2];
@@ -306,14 +321,18 @@
                     x = (t - e.r) / (e.l - e.r);
                     var u = ease(x);
                     var v = 1 - u;
+                    var carry = (e.l - e.r) * x * Math.pow(1 - x, 3);
                     var q = [
-                        v * v * e.P[0] + 2 * v * u * e.K[0] + u * u * e.T[0],
-                        v * v * e.P[1] + 2 * v * u * e.K[1] + u * u * e.T[1]
+                        v * v * e.P[0] + 2 * v * u * e.K[0] + u * u * e.T[0] + e.V[0] * carry,
+                        v * v * e.P[1] + 2 * v * u * e.K[1] + u * u * e.T[1] + e.V[1] * carry
                     ];
                     var tx = 2 * v * (e.K[0] - e.P[0]) + 2 * u * (e.T[0] - e.K[0]);
                     var ty = 2 * v * (e.K[1] - e.P[1]) + 2 * u * (e.T[1] - e.K[1]);
                     var rate = x < 0.5 ? 12 * x * x : 3 * Math.pow(2 - 2 * x, 2);
-                    var speed = Math.sqrt(tx * tx + ty * ty) * rate / ((e.l - e.r) * ENTER / 1000);
+                    var carryRate = (e.l - e.r) * Math.pow(1 - x, 2) * (1 - 4 * x);
+                    tx = tx * rate + e.V[0] * carryRate;
+                    ty = ty * rate + e.V[1] * carryRate;
+                    var speed = Math.sqrt(tx * tx + ty * ty) / ((e.l - e.r) * ENTER / 1000);
                     var stretch = 1 + Math.min(0.4, speed * 0.0003);
                     var size = mix(e.R0, e.R1, smooth(x));
                     var angle = Math.atan2(ty, tx);
@@ -330,7 +349,9 @@
                 } else if (t >= e.l && t < e.s + 0.05) {
                     // Landing: spreads into the target's band, then lets go.
                     x = Math.min(1, (t - e.l) / (e.s - e.l));
-                    var o = 1 - Math.pow(1 - x, 3);
+                    // Zero velocity at both ends, like the incoming flight:
+                    // an ease-out starts at full speed and snaps the band open.
+                    var o = smooth(x);
                     e.nodes.forEach(function (n) {
                         shapes.push([n.x, n.y, mix(e.R1, n.rx, o), mix(e.R1, n.ry, o), 0,
                             mix(e.R1, 1.5, o), mix(1, n.solid ? 1 : 0.45, o)]);
@@ -356,12 +377,12 @@
                 var layer = inBody ? budLayer : e.cluster.group;
                 e.paths.forEach(function (path, j) {
                     var s = shapes[j];
-                    path.setAttribute("d", s ? Ink.path(Ink.blob(s[0], s[1], s[2], s[3], s[4],
+                    attr(path, "d", s ? Ink.path(Ink.blob(s[0], s[1], s[2], s[3], s[4],
                         t * ENTER / 1150 + e.phase, s[5], s[6], POINTS), map) : "");
                     if (e.fill !== colour) path.style.fill = colour;
                     // Through the goo threshold, lower opacity erodes the band
                     // from its edges into the identical melted element below.
-                    path.setAttribute("fill-opacity", alpha.toFixed(3));
+                    attr(path, "fill-opacity", alpha.toFixed(3));
                     if (path.parentNode !== layer) layer.appendChild(path);
                 });
                 e.fill = colour;
@@ -369,8 +390,9 @@
                 // The element appears under the opaque band, then condenses.
                 var shown = smooth((t - e.s + 0.03) / 0.03);
                 var m = ease((t - e.s - 0.01) / 0.21);
+                var opacity = shown.toFixed(3);
                 e.nodes.forEach(function (n) {
-                    n.el.style.opacity = shown.toFixed(3);
+                    if (n.el.style.opacity !== opacity) n.el.style.opacity = opacity;
                     n.melt.set(m);
                 });
             }
@@ -378,14 +400,15 @@
             function render(t) {
                 var body = bodyAt(t);
                 var A = body.A;
-                orb.style.transform = "translate(11.25%, -6%) translate(" +
+                var transform = "translate(11.25%, -6%) translate(" +
                     (body.c[0] - c0[0]).toFixed(2) + "px," + (body.c[1] - c0[1]).toFixed(2) + "px) matrix(" +
                     A.map(function (n) { return n.toFixed(4); }).join(",") + ",0,0)";
+                if (orb.style.transform !== transform) orb.style.transform = transform;
                 portal.style.backgroundColor = "rgba(" + portalFill.slice(0, 3).join(",") + "," +
                     (portalFill[3] * (1 - smooth((t - 0.10) / 0.42))).toFixed(3) + ")";
                 var fade = smooth((t - 0.45) / 0.45).toFixed(3);
                 Array.prototype.forEach.call(quiet, function (node) {
-                    node.style.opacity = fade;
+                    if (node.style.opacity !== fade) node.style.opacity = fade;
                 });
                 clusters.forEach(function (c) {
                     c.box = [Infinity, Infinity, -Infinity, -Infinity];
@@ -396,10 +419,16 @@
                 // Keep each filter region tight around its echoes: cost follows area.
                 clusters.forEach(function (c) {
                     var b = c.box[0] < Infinity ? c.box : [0, 0, 0, 0];
-                    c.filter.setAttribute("x", (b[0] - 40).toFixed(0));
-                    c.filter.setAttribute("y", (b[1] - 40).toFixed(0));
-                    c.filter.setAttribute("width", (b[2] - b[0] + 80).toFixed(0));
-                    c.filter.setAttribute("height", (b[3] - b[1] + 80).toFixed(0));
+                    // Round outward on a small grid: preserve blur padding
+                    // without reallocating the filter surface for every pixel.
+                    var left = Math.floor((b[0] - 40) / 16) * 16;
+                    var top = Math.floor((b[1] - 40) / 16) * 16;
+                    var right = Math.ceil((b[2] + 40) / 16) * 16;
+                    var bottom = Math.ceil((b[3] + 40) / 16) * 16;
+                    attr(c.filter, "x", String(left));
+                    attr(c.filter, "y", String(top));
+                    attr(c.filter, "width", String(right - left));
+                    attr(c.filter, "height", String(bottom - top));
                 });
                 // Eyes glance at each bud as it leaves, then towards the dock.
                 var gaze = [0, 0];

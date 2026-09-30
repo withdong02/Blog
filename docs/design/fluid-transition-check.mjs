@@ -18,6 +18,8 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
     const handlers = {};
     const created = [];
     const frames = new Map();
+    const shapes = [];
+    let writes = 0;
     let frameId = 0;
     let docRoot = null;
 
@@ -25,7 +27,7 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
         const n = {
             tagName: tag, style: {}, attrs: {}, children: [], parentNode: null, hidden: false,
             computed: {}, rect: { left: 0, top: 0, width: 0, height: 0 }, handlers: {}, select: {},
-            setAttribute(k, v) { this.attrs[k] = String(v); },
+            setAttribute(k, v) { writes++; this.attrs[k] = String(v); },
             getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
             appendChild(c) { return this.insertBefore(c, null); },
             insertBefore(c, ref) {
@@ -143,15 +145,20 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
         cancelAnimationFrame(id) { frames.delete(id); },
         history: { pushState(_state, _unused, value) { window.location.hash = value.startsWith("#") ? value : ""; } }
     };
-    const context = vm.createContext({ document, window, Event: class Event {}, NodeFilter: { SHOW_ELEMENT: 1, SHOW_TEXT: 4 } });
+    const context = vm.createContext({ document, window, requestAnimationFrame: fn => window.requestAnimationFrame(fn), Event: class Event {}, NodeFilter: { SHOW_ELEMENT: 1, SHOW_TEXT: 4 } });
     if (ink) vm.runInContext(inkSource, context);
+    if (ink) {
+        const blob = window.FluidInk.blob;
+        window.FluidInk.blob = (...args) => { shapes.push(args.slice(0, 5)); return blob(...args); };
+    }
     vm.runInContext(source, context);
     function tick(now) {
+        shapes.length = 0;
         const due = [...frames.values()];
         frames.clear();
         due.forEach(fn => fn(now));
     }
-    return { root, orb, portal, home, main, menu, budLayer, window, document, handlers, eyes, targets, homeLink, created, frames, tick };
+    return { root, orb, portal, home, main, menu, budLayer, window, document, handlers, eyes, targets, homeLink, created, frames, tick, shapes, writes: () => writes };
 }
 
 // Everything a scene touched is back as it was, and no frame is pending.
@@ -206,6 +213,7 @@ for (const hash of ["#articles", "#main"]) {
     const h = harness({ reduced: false });
     h.handlers.DOMContentLoaded();
     h.handlers.pointermove({ clientX: 700, clientY: 300 });
+    h.tick(0);
     assert.equal(h.eyes[0].style.transform, h.eyes[1].style.transform);
     assert.match(h.eyes[0].style.transform, /translate\(10\.0px,2\.4px\)/);
 }
@@ -299,3 +307,29 @@ for (const options of [{ wide: false }, { fine: false }, { reduced: true }, { in
     assert.equal(h.main.inert, false);
 }
 console.log("narrow, touch, reduced-motion and no-ink entrances remain operable without animation");
+
+// Motion continuity: a release must not halt; a landed band starts spreading
+// at zero speed instead of jumping to its full expansion velocity.
+{
+    const h = harness({ reduced: false });
+    h.handlers.DOMContentLoaded();
+    h.orb.handlers.click();
+    h.tick(0);
+    function sample(t) { h.tick(t * ENTER); return h.shapes[0].slice(); }
+    const before = sample(0.1399);
+    const release = sample(0.14);
+    const after = sample(0.1401);
+    const incoming = [release[0] - before[0], release[1] - before[1]];
+    const outgoing = [after[0] - release[0], after[1] - release[1]];
+    const change = Math.hypot(outgoing[0] - incoming[0], outgoing[1] - incoming[1]);
+    assert.ok(change < Math.hypot(...incoming) * 0.15, "release retains body velocity");
+    const landed = sample(0.52);
+    const spreading = sample(0.5201);
+    assert.ok(Math.abs(spreading[2] - landed[2]) < 0.01, "band starts spreading gently");
+    const writes = h.writes();
+    sample(0.5201);
+    assert.equal(h.writes(), writes, "unchanged geometry does not invalidate SVG attributes again");
+    h.handlers.resize();
+    assertClean(h);
+}
+console.log("release velocity, soft landing and unchanged-attribute checks passed");

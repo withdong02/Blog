@@ -40,6 +40,7 @@
     var timer;
     if (!window.MutationObserver) return;
     new MutationObserver(function () {
+        if (window._fluidVT) return;
         root.classList.add("theme-transition");
         window.clearTimeout(timer);
         timer = window.setTimeout(function () {

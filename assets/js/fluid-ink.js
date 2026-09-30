@@ -159,7 +159,8 @@
                 blur.setAttribute("stdDeviation", (sigma * k).toFixed(2));
                 matrix.setAttribute("values", "1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 " +
                     (1 + 21 * q).toFixed(2) + " " + (-cut * q).toFixed(2));
-                el.style.filter = "url(#" + id + ")";
+                var url = "url(#" + id + ")";
+                if (el.style.filter !== url) el.style.filter = url;
             },
             // How far the melted band reaches past the glyphs, for callers
             // that draw a matching band of ink.

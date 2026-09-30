@@ -143,15 +143,69 @@
 <script>
     document.getElementById("theme-toggle").addEventListener("click", () => {
         const html = document.querySelector("html");
-        if (html.dataset.theme === "dark") {
-            html.dataset.theme = 'light';
-            localStorage.setItem("pref-theme", 'light');
-        } else {
-            html.dataset.theme = 'dark';
-            localStorage.setItem("pref-theme", 'dark');
+        function flip() {
+            if (html.dataset.theme === "dark") {
+                html.dataset.theme = 'light';
+                localStorage.setItem("pref-theme", 'light');
+            } else {
+                html.dataset.theme = 'dark';
+                localStorage.setItem("pref-theme", 'dark');
+            }
         }
+        var Ink = window.FluidInk;
+        if (!document.startViewTransition ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches || !Ink) {
+            flip();
+            return;
+        }
+        var btn = document.getElementById("theme-toggle");
+        var rect = btn.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        var maxR = Math.sqrt(Math.max(
+            cx * cx + cy * cy,
+            (w - cx) * (w - cx) + cy * cy,
+            cx * cx + (h - cy) * (h - cy),
+            (w - cx) * (w - cx) + (h - cy) * (h - cy)
+        )) * 1.05;
+        var phase = performance.now() / 1000;
+        function blobClip(r) {
+            var points = Ink.blob(cx, cy, r, r, 0, phase, 15, 1, 16);
+            return "path('" + Ink.path(points) + "')";
+        }
+        /* A second transition while one is still spreading would skip the
+           first, and `ready` rejects when that happens — an unhandled
+           rejection in the console, plus two clipped copies of the page
+           fighting over the root pseudo-element. Flip without the flourish
+           instead; the theme still changes on every click. */
+        if (window._fluidVT) {
+            flip();
+            return;
+        }
+        window._fluidVT = true;
+        var before = html.dataset.theme;
+        var transition;
+        try {
+            transition = document.startViewTransition(function () { flip(); });
+        } catch (err) {
+            /* Nothing to animate, and nothing left to wait for: the flag has
+               to come back down or every later switch takes the shortcut. */
+            window._fluidVT = false;
+            if (html.dataset.theme === before) flip();
+            return;
+        }
+        transition.ready.then(function () {
+            html.animate(
+                { clipPath: [blobClip(20), blobClip(maxR)] },
+                { duration: 800, easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+                  pseudoElement: "::view-transition-new(root)" }
+            );
+        }).catch(function () { /* skipped: nothing left to animate */ });
+        transition.finished.catch(function () { /* skipped or aborted */ })
+            .finally(function () { window._fluidVT = false; });
     })
-
 </script>
 {{- end }}
 
