@@ -436,8 +436,19 @@
         gooFilter.setAttribute("height", box.height);
     }
 
+    /* Whether the pinned region is still spoken for. The region is not the
+       pull's property alone: a break keeps it for the flight home, and it just
+       outlasted a pull that began while that break was finishing — handing it
+       back the moment the break's own cleanup ran clipped the second drag to
+       the small region around the body, so the blob vanished beyond that box
+       and reappeared inside it (2026-09-30). */
+    function gooNeeded() {
+        return !!(dragStart || dragSVG || dragActive)
+            || Math.sqrt(Math.pow(bx - BCX, 2) + Math.pow(by - BCY, 2)) > BR * 0.75;
+    }
+
     function restoreGoo() {
-        if (!gooPinned) return;
+        if (!gooPinned || gooNeeded()) return;
         gooPinned = false;
         gooPinnedBox = null;
         if (!gooFilter || !gooOrig) return;
@@ -450,7 +461,14 @@
     function bumpStep(now) {
         var k = frameTicks(now);
         if (playing) {
+            /* The click scene takes the whole figure over: drop this pull
+               entirely, deformation included, or the next one starts from a
+               blob that was left mid-stretch. Landing it on the body first is
+               also what lets the region go back. */
             bumpEl.setAttribute("d", "");
+            bx = BCX; by = BCY; bvx = 0; bvy = 0;
+            bumpStretch = 1; bumpAngle = 0; bumpPhase = 0; pointerSpeed = 0;
+            deformX = 0; deformY = 0;
             bumpRaf = 0;
             restoreGoo();
             return;

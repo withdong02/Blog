@@ -34,6 +34,14 @@
     visibility: hidden;
 }
 
+/* The figure is carried from portal to dock by a per-frame matrix transform
+   with goo filters inside it. Hinting the compositor for the length of the
+   choreography only — the class comes off when the scene ends, so nothing keeps
+   a layer alive afterwards. */
+.fluid-composing .fluid-ip-orb {
+    will-change: transform;
+}
+
 /* Real controls are revealed by the ink choreography; the portal still owns
    pointer input until it is finished. No permanent overlay remains afterward. */
 .fluid-composing #theme-toggle,

@@ -517,6 +517,48 @@ for (const [name, options] of [
         Math.abs(held.x - 256) > 60, `x=${held.x.toFixed(1)}`);
 }
 
+/* 8h. A pull that starts while a previous break is still running must keep the
+   pinned region. The break's cleanup owns the region and hands it back when it
+   ends — mid-gesture, that used to leave the second drag clipped to the small
+   region around the body: the blob could be dragged out of sight and only
+   reappeared inside that box. */
+{
+    const h = makeHarness();
+    /* Far enough to break off, then released: the echo animation now owns the
+       next 3600ms of screen time. */
+    h.drag(400, 400, 900, 900, 16, 0);
+    h.release();
+    check("second pull: the first one handed off to the echo animation",
+        h.state().breaking === true, `breaking=${h.state().breaking}`);
+
+    /* Immediately another pull — well inside one break's lifetime — and this
+       one is dragged the whole time, past the moment the break cleans up. */
+    h.pointer("pointerdown", 300, 300, "orb");
+    let x = 300;
+    let clipped = 0;
+    let regionLost = 0;
+    for (let i = 0; i < 240; i++) {
+        x += 4;
+        h.pointer("pointermove", x, 300, "window");
+        h.step();
+        const s = h.state();
+        if (!s.bounds) { regionLost++; continue; }
+        const i2 = 55 * 1.7;
+        if (s.x - i2 < s.bounds.x || s.x + i2 > s.bounds.x + s.bounds.width) clipped++;
+    }
+    check("second pull: the region survives the break that ends underneath it",
+        regionLost === 0, `frames without a pinned region=${regionLost}`);
+    check("second pull: the blob stays inside the region it is drawn in",
+        clipped === 0, `frames outside=${clipped}`);
+    /* The opposite failure: a region that is never handed back keeps the whole
+       viewport as a filter surface for the rest of the page's life. */
+    h.release();
+    h.runFor(4000);
+    check("second pull: once everything has settled the region does go back",
+        h.gooAttrs.width === "900" && h.gooAttrs.y === "-140",
+        `goo=${JSON.stringify(h.gooAttrs)}`);
+}
+
 /* 8e. The broken-off pattern comes home as ink: it has to be a whole blob
    again before it starts to move, not melt while it flies. And while the
    pattern is fully on show, no ink may sit under it — the forms layer is

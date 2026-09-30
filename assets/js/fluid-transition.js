@@ -391,6 +391,15 @@
                 var shown = smooth((t - e.s + 0.03) / 0.03);
                 var m = ease((t - e.s - 0.01) / 0.21);
                 var opacity = shown.toFixed(3);
+                /* Each of these filters re-runs a dilate / blur / threshold
+                   chain over its element whenever anything in it changes, and
+                   every target condenses inside the same stretch of the scene.
+                   Scheduling those rewrites more coarsely does help the main
+                   thread (measured: about -15% over the whole entrance), but
+                   all six windows overlap almost completely, so the best it can
+                   do is roughly a third fewer re-renders spread evenly — and it
+                   puts visible steps into the reveal. Not worth it: the reveal
+                   stays continuous and leans on the compositor hint instead. */
                 e.nodes.forEach(function (n) {
                     if (n.el.style.opacity !== opacity) n.el.style.opacity = opacity;
                     n.melt.set(m);
