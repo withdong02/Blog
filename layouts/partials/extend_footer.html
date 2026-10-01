@@ -1,5 +1,5 @@
 {{- /* The DeepSeek-style starfield background is switched off site-wide as of the
-       fluid-IP first release (docs/design/fluid-ip.md): its canvas and script
+       fluid-IP first release (DESIGN.md): its canvas and script
        injection lived here and are gone. static/js/starfield.js and
        assets/css/extended/starfield.css are kept on disk so it can be restored
        by putting those two lines back. */ -}}
@@ -13,7 +13,7 @@
 {{- $tocJs := resources.Get "js/toc-sidebar.js" | minify | fingerprint "sha256" }}
 <script src="{{ $tocJs.RelPermalink }}" integrity="{{ $tocJs.Data.Integrity }}" defer></script>
 {{- /* Shared ink primitives (window.FluidInk) for the character's scenes —
-       see docs/design/fluid-ink.md. Site-wide and before fluid-ip.js. */ -}}
+       see DESIGN.md. Site-wide and before fluid-ip.js. */ -}}
 {{- $fluidInkJs := resources.Get "js/fluid-ink.js" | minify | fingerprint "sha256" }}
 <script src="{{ $fluidInkJs.RelPermalink }}" integrity="{{ $fluidInkJs.Data.Integrity }}" defer></script>
 {{- /* Reading-progress ink (scenario D): a clone of the mark rides the tip of
@@ -22,8 +22,8 @@
        itself on window.TocRail, so pages without the rail cost one if. */ -}}
 {{- $fluidReadJs := resources.Get "js/fluid-read.js" | minify | fingerprint "sha256" }}
 <script src="{{ $fluidReadJs.RelPermalink }}" integrity="{{ $fluidReadJs.Data.Integrity }}" defer></script>
-{{- /* Home-page fluid avatar (蕫冬咚) — see assets/js/fluid-ip.js and
-       docs/design/fluid-ip.md. Only the home page carries the figure, so only
+{{- /* Home-page figure, 回声 (Echo) — see assets/js/fluid-ip.js and
+       DESIGN.md. Only the home page carries the figure, so only
        the home page loads the script; on the paginated pages past the first
        there is no figure and the script exits on its first line. Same Hugo
        asset pipeline as toc-sidebar.js above: the fingerprinted URL changes

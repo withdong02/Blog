@@ -1,5 +1,7 @@
-/* Project: home-page fluid avatar (蕫冬咚) — see docs/design/fluid-ip.md.
- * Visual baseline: docs/design/fluid-ip-demo.html (the confirmed sample).
+/* Project: the home-page figure — 回声 (Echo). She is one blob of ink with a
+ * dent, a bump and two large round eyes; DESIGN.md holds the design record.
+ * The profile above was settled by the sample page of the first release; the
+ * SVG in layouts/partials/home_info.html carries it now.
  *
  * Behaviour only. The body outline, the eyes and the goo filter live in
  * layouts/partials/home_info.html, the two-tone fills in
@@ -805,7 +807,7 @@
         if (document.hidden) stopPull();
     });
 
-    /* Read-only view of the pull, for docs/design/fluid-ip-check.mjs: the
+    /* Read-only view of the pull, for tests/fluid-ip-check.mjs: the
        deformation axis and the filter region are the two things that cannot be
        judged from the build output. */
     window.FluidIpPull = {

@@ -1,4 +1,4 @@
-/* Project: reading-progress ink — scenario D of docs/design/fluid-ink.md.
+/* Project: reading-progress ink — scenario D of DESIGN.md.
  *
  * A small clone of the navigation mark rides the tip of the reading progress
  * bar: the bar is the line of ink it drags behind it, and the mark hangs from

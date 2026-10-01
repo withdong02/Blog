@@ -1,8 +1,8 @@
 /*
  * Minimal runnable check for the home-page fluid avatar behaviour
- * (assets/js/fluid-ip.js — see docs/design/fluid-ip.md, section 4).
+ * (assets/js/fluid-ip.js — see DESIGN.md, section 4).
  *
- *   node docs/design/fluid-ip-check.mjs
+ *   node tests/fluid-ip-check.mjs
  *
  * It is not a test framework and does not try to be one: the script is loaded
  * into a fake DOM with a hand-driven clock, and only what the animation
@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const source = readFileSync(join(here, "..", "..", "assets", "js", "fluid-ip.js"), "utf8");
+const source = readFileSync(join(here, "..", "assets", "js", "fluid-ip.js"), "utf8");
 
 const TOTAL = 9000 + 2 * 320; /* DURATION + (echoes - 1) * STAGGER */
 

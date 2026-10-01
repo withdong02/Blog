@@ -1,7 +1,7 @@
 {{- /*
    Project override of themes/PaperMod/layouts/partials/home_info.html.
 
-   Only change: the 蕫冬咚 figure (fluid avatar) is added between the intro text
+   Only change: the 回声 (Echo) figure is added between the intro text
    and the social icons. Title, content and social icons are byte-for-byte the
    theme's, so this file stays diffable against the vendored copy; keep it in
    sync when the theme partial changes.
@@ -14,11 +14,11 @@
    then enables the button and swaps the label. The figure itself is real SVG in
    the HTML: with JavaScript off it is still drawn, just not clickable.
 
-   The SVG is the confirmed sample (docs/design/fluid-ip-demo.html): one
-   irregular blob with a dent and a bump, two large round eyes, and a goo filter
-   so echoes fuse with the body instead of stacking. The viewBox keeps room
-   for their travel, and the filter region covers their paths. Echo paths and
-   their temporary forms are created from the specs in fluid-ip.js.
+   The SVG draws 回声 (Echo): one irregular blob with a dent and a bump, two
+   large round eyes, and a goo filter so the blots she throws off fuse with her
+   body instead of stacking. The viewBox keeps room for the blots to travel, and
+   the filter region covers their paths. Blot paths and the temporary forms they
+   become come from the specs in fluid-ip.js — see DESIGN.md.
 
    Colours: the body, echoes and forms take PaperMod's --primary, the eyes take the
    home-page background (--code-bg in light, --theme in dark — see
@@ -35,7 +35,7 @@
         {{ .Content | $.Page.RenderString $opts }}
     </div>
     <button id="fluid-ip-orb" class="fluid-ip-orb" type="button" disabled
-        aria-label="蕫冬咚：一团不规则的流体，有两只圆眼睛"
+        aria-label="回声：一团不规则的流体，有两只圆眼睛"
         data-label-action="放出灵感；文字和图案展开后，再次点击可收回">
         <svg class="fluid-ip-svg" viewBox="-60 -140 800 680" aria-hidden="true" focusable="false">
             <defs>

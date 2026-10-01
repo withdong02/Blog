@@ -1,4 +1,4 @@
-/* Shared ink primitives for the fluid character — see docs/design/fluid-ink.md.
+/* Shared ink primitives for the fluid character — see DESIGN.md.
  *
  * Geometry only, no timers: every scene owns one finite rAF timeline and calls
  * these helpers per frame. Colours are never decided here; callers pass the

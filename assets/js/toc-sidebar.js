@@ -236,7 +236,7 @@
 
     /* --- progress ---
        The bar is also the ink line the reading mark drags behind it (scenario D
-       in docs/design/fluid-ink.md), so it exposes a hook instead of hiding the
+       in DESIGN.md), so it exposes a hook instead of hiding the
        number: the attachment has to write the same value on the same clock —
        with its CSS transition left on, the line would glide towards the target
        while the mark jumped straight to it, and the mark would run ahead of the

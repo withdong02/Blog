@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const js = name => readFileSync(join(here, "..", "..", "assets", "js", name), "utf8");
+const js = name => readFileSync(join(here, "..", "assets", "js", name), "utf8");
 const source = js("fluid-transition.js");
 const inkSource = js("fluid-ink.js");
 const ENTER = +source.match(/ENTER = (\d+)/)[1];

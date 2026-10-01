@@ -1,4 +1,4 @@
-/* Scenario D (reading-progress ink) — see docs/design/fluid-ink.md.
+/* Scenario D (reading-progress ink) — see DESIGN.md.
  *
  * A fake DOM with a hand-driven clock, in the same spirit as the other two
  * check scripts: only what the scenario promises is checked. The gate, the
@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const js = name => readFileSync(join(here, "..", "..", "assets", "js", name), "utf8");
+const js = name => readFileSync(join(here, "..", "assets", "js", name), "utf8");
 const inkSource = js("fluid-ink.js");
 const source = js("fluid-read.js");
 
