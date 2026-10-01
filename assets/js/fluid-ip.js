@@ -9,8 +9,8 @@
  * script never runs, and colours follow the theme through CSS variables even
  * while an animation is in flight.
  *
- * Echo specs are data: every loop below iterates SPECS, so adding or removing
- * an echo is a one-line change here and nothing assumes three of them.
+ * Blot specs are data: every loop below iterates SPECS, so adding or removing
+ * an blot is a one-line change here and nothing assumes three of them.
  *
  * Interaction is gated on exactly what fluid-ip.css gates on: at least 900px
  * wide, a fine pointer that can hover, and no reduced-motion request. Failing
@@ -20,7 +20,7 @@
  * Frames run only while an animation is in flight: one rAF chain per click, no
  * idle rAF, and no second chain while one is playing. Every way out of the
  * animation — normal end, hidden tab, gate turning off, a click that is refused
- * — clears the echo paths, so nothing is left in the body's dent.
+ * — clears the blot paths, so nothing is left in the body's dent.
  */
 (function () {
     "use strict";
@@ -28,18 +28,18 @@
     var orb = document.getElementById("fluid-ip-orb");
     if (!orb) return;
 
-    var echoLayer = orb.querySelector(".fluid-ip-echoes");
+    var blotLayer = orb.querySelector(".fluid-ip-blots");
     var formLayer = orb.querySelector(".fluid-ip-forms");
-    if (!echoLayer || !formLayer) return;
+    if (!blotLayer || !formLayer) return;
 
     var SVG_NS = "http://www.w3.org/2000/svg";
 
-    /* One echo: grows out of the body edge, drifts, holds, merges back. */
+    /* One blot: grows out of the body edge, drifts, holds, merges back. */
     var DURATION = 9000;
-    /* Delay between consecutive echoes, so they leave one after another. */
+    /* Delay between consecutive blots, so they leave one after another. */
     var STAGGER = 320;
 
-    /* from: point on the body outline the echo is born from.
+    /* from: point on the body outline the blot is born from.
        to:   far point of its drift. radius: its body radius. */
     var SPECS = [
         { from: [365, 85], to: [610, -80], radius: 54,
@@ -65,9 +65,9 @@
     var LABEL_STATIC = orb.getAttribute("aria-label") || "";
     var LABEL_ACTION = orb.getAttribute("data-label-action") || LABEL_STATIC;
 
-    var echoes = SPECS.map(function () {
+    var blots = SPECS.map(function () {
         var path = document.createElementNS(SVG_NS, "path");
-        echoLayer.appendChild(path);
+        blotLayer.appendChild(path);
         return path;
     });
     var forms = [];
@@ -121,12 +121,12 @@
     /* An 8-point closed curve drawn through midpoints, so every point of the
        ring is an off-curve control point: the outline stays soft and never
        shows a corner. Ripple and stretch make it quiver rather than stay a
-       circle, which is what separates a fluid echo from a bubble.
+       circle, which is what separates a fluid blot from a bubble.
 
        `symmetric` restricts the ripple to even harmonics, making the outline
        centrally symmetric: no arrangement of bumps can mark a front or a back,
        and turning the deformation axis a half turn leaves the surface exactly
-       as it was. The echoes keep the odd harmonics — that quiver is part of
+       as it was. The blots keep the odd harmonics — that quiver is part of
        the confirmed baseline — because their axis never flips mid-flight. */
     function blobPath(cx, cy, radius, phase, stretch, angle, symmetric) {
         if (radius < 0.1) return "";
@@ -157,14 +157,14 @@
         return d + " Z";
     }
 
-    function clearEchoes() {
-        for (var i = 0; i < echoes.length; i++) {
-            echoes[i].setAttribute("d", "");
+    function clearBlots() {
+        for (var i = 0; i < blots.length; i++) {
+            blots[i].setAttribute("d", "");
         }
         forms.forEach(function (form) { form.setAttribute("opacity", "0"); });
     }
 
-    /* Back to the resting state: no pending frame, no echo geometry. Called for
+    /* Back to the resting state: no pending frame, no blot geometry. Called for
        the normal end of an animation and for every interruption. */
     function stop() {
         if (raf) window.cancelAnimationFrame(raf);
@@ -172,7 +172,7 @@
         started = null;
         playing = false;
         recalledAt = null;
-        clearEchoes();
+        clearBlots();
     }
 
     function frame(now) {
@@ -188,7 +188,7 @@
         var phase = elapsed / 1150;
         var complete = true;
 
-        for (var i = 0; i < echoes.length; i++) {
+        for (var i = 0; i < blots.length; i++) {
             var spec = SPECS[i];
             var t = Math.max(0, Math.min(1, (elapsed - i * STAGGER) / DURATION));
             if (recalledAt !== null) {
@@ -198,19 +198,19 @@
             /* Travel and transformation have separate beats: let the symbol
                melt completely before pulling the ink back into the body. */
             var p = t < 0.30 ? ease(t / 0.30) : t < 0.80 ? 1 : 1 - ease((t - 0.80) / 0.20);
-            /* Starts and ends at zero size, so the echo is born from the body
+            /* Starts and ends at zero size, so the blot is born from the body
                edge and dissolves into it instead of popping. */
             var size = spec.radius * Math.min(1, ease(Math.min(1, t / 0.22)), ease(Math.min(1, (1 - t) / 0.15)));
-            /* Once detached, each echo briefly takes a form. The same slot can
+            /* Once detached, each blot briefly takes a form. The same slot can
                hold an SVG path or any text without changing the animation. */
             var formMix = t < 0.30 ? 0 : t < 0.45 ? ease((t - 0.30) / 0.15)
                 : t < 0.66 ? 1 : t < 0.80 ? 1 - ease((t - 0.66) / 0.14) : 0;
             var stretch = 1 + 0.2 * Math.sin(Math.PI * p) + 0.07 * Math.sin(phase * 1.2);
-            var echoPhase = phase + i * 1.7;
+            var blotPhase = phase + i * 1.7;
             var cx = spec.from[0] + (spec.to[0] - spec.from[0]) * p;
             var cy = spec.from[1] + (spec.to[1] - spec.from[1]) * p - 25 * Math.sin(Math.PI * p);
-            echoes[i].setAttribute("d", blobPath(
-                cx, cy, size * (1 - formMix), echoPhase, stretch,
+            blots[i].setAttribute("d", blobPath(
+                cx, cy, size * (1 - formMix), blotPhase, stretch,
                 Math.atan2(spec.to[1] - spec.from[1], spec.to[0] - spec.from[0])
             ));
             forms[i].setAttribute("opacity", formMix.toFixed(3));
@@ -303,7 +303,7 @@
     var svgEl = orb.querySelector("svg");
     var bumpEl = document.createElementNS(SVG_NS, "path");
     bumpEl.setAttribute("d", "");
-    echoLayer.appendChild(bumpEl);
+    blotLayer.appendChild(bumpEl);
 
     var BCX = 256, BCY = 250, BR = 230, BUMP_R = 55;
     var bx = BCX, by = BCY, bvx = 0, bvy = 0;
@@ -730,8 +730,8 @@
         var formDef = spec.forms[scene % spec.forms.length];
         scene++;
 
-        var echoP = document.createElementNS(SVG_NS, "path");
-        echoLayer.appendChild(echoP);
+        var blotP = document.createElementNS(SVG_NS, "path");
+        blotLayer.appendChild(blotP);
         var formNode = document.createElementNS(SVG_NS, formDef.type);
         formNode.setAttribute("class",
             "fluid-ip-form" + (formDef.type === "text" ? " fluid-ip-form-text" : ""));
@@ -741,7 +741,7 @@
         formNode.setAttribute("opacity", "0");
         formLayer.appendChild(formNode);
 
-        var els = [echoP, formNode];
+        var els = [blotP, formNode];
         breakCleanup = function () {
             if (breakRaf) window.cancelAnimationFrame(breakRaf);
             breakRaf = 0;
@@ -783,7 +783,7 @@
             var size = spec.radius * (1 - formMix)
                 * (1 - ease(flyT) * 0.45);
 
-            echoP.setAttribute("d", blobPath(cx, cy,
+            blotP.setAttribute("d", blobPath(cx, cy,
                 size, now / 1200, 1, 0));
             formNode.setAttribute("opacity", formMix.toFixed(3));
             formNode.setAttribute("transform",
@@ -817,7 +817,7 @@
                 stretch: bumpStretch,
                 angle: bumpAngle,
                 pulled: !!(dragActive && dragSVG),
-                /* A break hands the pull off to the echo animation and resets
+                /* A break hands the pull off to the blot animation and resets
                    the blob, which reads exactly like a frozen pull unless the
                    check can tell them apart. */
                 breaking: !!breakCleanup,

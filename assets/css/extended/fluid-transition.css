@@ -52,7 +52,7 @@
 .fluid-portal .fluid-ip-orb {
     width: min(64vw, 500px);
     margin: 0;
-    /* SVG viewBox reserves room for echoes; shift the visible body to center. */
+    /* SVG viewBox reserves room for blots; shift the visible body to center. */
     transform: translate(11.25%, -6%);
     cursor: pointer;
     touch-action: manipulation;

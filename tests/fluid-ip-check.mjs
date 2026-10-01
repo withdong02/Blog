@@ -23,7 +23,7 @@ import vm from "node:vm";
 const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, "..", "assets", "js", "fluid-ip.js"), "utf8");
 
-const TOTAL = 9000 + 2 * 320; /* DURATION + (echoes - 1) * STAGGER */
+const TOTAL = 9000 + 2 * 320; /* DURATION + (blots - 1) * STAGGER */
 
 function makeHarness(options = {}) {
     const opts = Object.assign({ wide: true, fine: true, reduced: false, withOrb: true }, options);
@@ -47,7 +47,7 @@ function makeHarness(options = {}) {
         return media.get(query);
     }
 
-    const echoes = [];
+    const blots = [];
     const forms = [];
     const attrs = { "aria-label": "static", "data-label-action": "action" };
     const orbHandlers = {};
@@ -71,14 +71,14 @@ function makeHarness(options = {}) {
     const orb = {
         disabled: true,
         isConnected: true,
-        querySelector: (selector) => (selector === ".fluid-ip-echoes" ? echoLayer
+        querySelector: (selector) => (selector === ".fluid-ip-blots" ? blotLayer
             : selector === ".fluid-ip-forms" ? formLayer : selector === "defs" ? { appendChild() {} }
             : selector === "svg" ? svgEl : null),
         addEventListener(type, fn) { (orbHandlers[type] || (orbHandlers[type] = [])).push(fn); },
         getAttribute: (name) => (name in attrs ? attrs[name] : null),
         setAttribute(name, value) { attrs[name] = value; }
     };
-    const echoLayer = { appendChild: (node) => echoes.push(node) };
+    const blotLayer = { appendChild: (node) => blots.push(node) };
     const formLayer = { appendChild: (node) => forms.push(node), replaceChildren: () => { forms.length = 0; } };
 
     const document = {
@@ -176,7 +176,7 @@ function makeHarness(options = {}) {
         { filename: "fluid-ip.js" });
 
     return {
-        orb, attrs, echoes, forms, media: mediaQuery, document, gooAttrs, window,
+        orb, attrs, blots, forms, media: mediaQuery, document, gooAttrs, window,
         click: () => fire("click", "orb"),
         hide: () => { document.hidden = true; fire("visibilitychange", "document"); },
         step, runFor, pointer, drag, steer,
@@ -184,8 +184,8 @@ function makeHarness(options = {}) {
         state: () => window.FluidIpPull.state(),
         pending: () => queued.size,
         framesRun: () => framesRun,
-        echoGeometry: () => echoes.map((node) => node.d),
-        allCleared: () => echoes.every((node) => node.d === "")
+        blotGeometry: () => blots.map((node) => node.d),
+        allCleared: () => blots.every((node) => node.d === "")
             && forms.every((node) => node.attrs.opacity === "0")
     };
 }
@@ -217,19 +217,19 @@ for (const [name, options] of [
         `disabled=${h.orb.disabled} label=${h.attrs["aria-label"]} pending=${h.pending()}`);
 }
 
-/* 2. A normal run ends clean: echoes cleared, no frame left scheduled. */
+/* 2. A normal run ends clean: blots cleared, no frame left scheduled. */
 {
     const h = makeHarness();
     h.click();
     h.runFor(5000);
-    check("middle beat: forms visibly replace detached echoes",
+    check("middle beat: forms visibly replace detached blots",
         h.forms.some((node) => Number(node.attrs.opacity) > 0.5)
-            && h.echoes.some((node) => node.d === ""));
+            && h.blots.some((node) => node.d === ""));
     h.runFor(TOTAL);
-    check("ends clean: every echo path cleared",
-        h.allCleared(), JSON.stringify(h.echoGeometry()));
+    check("ends clean: every blot path cleared",
+        h.allCleared(), JSON.stringify(h.blotGeometry()));
     check("ends clean: nothing left scheduled", h.pending() === 0, `pending=${h.pending()}`);
-    check("ends clean: echoes did animate on the way",
+    check("ends clean: blots did animate on the way",
         h.framesRun() > 100, `frames=${h.framesRun()}`);
     check("forms support a path and text",
         h.forms.length === 3 && h.forms[0].tag === "path"
@@ -267,7 +267,7 @@ for (const [name, options] of [
     h.hide();
     check("hidden tab: an animation was in flight and was cleared",
         animating && h.allCleared() && h.pending() === 0,
-        `animating=${animating} geometry=${JSON.stringify(h.echoGeometry())} pending=${h.pending()}`);
+        `animating=${animating} geometry=${JSON.stringify(h.blotGeometry())} pending=${h.pending()}`);
     h.document.hidden = false;
 }
 
@@ -312,7 +312,7 @@ for (const [name, options] of [
     h.step();
     check("figure removed mid-flight: stopped and cleared",
         h.allCleared() && h.pending() === 0,
-        `geometry=${JSON.stringify(h.echoGeometry())} pending=${h.pending()}`);
+        `geometry=${JSON.stringify(h.blotGeometry())} pending=${h.pending()}`);
 }
 
 /* 7. Pages without the figure (paginated home, articles) stay inert. */
@@ -524,11 +524,11 @@ for (const [name, options] of [
    reappeared inside that box. */
 {
     const h = makeHarness();
-    /* Far enough to break off, then released: the echo animation now owns the
+    /* Far enough to break off, then released: the blot animation now owns the
        next 3600ms of screen time. */
     h.drag(400, 400, 900, 900, 16, 0);
     h.release();
-    check("second pull: the first one handed off to the echo animation",
+    check("second pull: the first one handed off to the blot animation",
         h.state().breaking === true, `breaking=${h.state().breaking}`);
 
     /* Immediately another pull — well inside one break's lifetime — and this
@@ -568,7 +568,7 @@ for (const [name, options] of [
     const h = makeHarness();
     h.drag(400, 400, 900, 900, 16, 2);
     h.release();
-    check("break: pulling far enough hands off to the echo animation",
+    check("break: pulling far enough hands off to the blot animation",
         h.state().breaking === true, `breaking=${h.state().breaking}`);
 
     let firstFly = null;
@@ -580,9 +580,9 @@ for (const [name, options] of [
     /* The break now runs 3600ms; sampling has to cover all of it. */
     for (let i = 0; i < 260; i++) {
         h.step();
-        const echo = h.echoes[h.echoes.length - 1];
+        const blot = h.blots[h.blots.length - 1];
         const form = h.forms[h.forms.length - 1];
-        if (!echo || !form) break;
+        if (!blot || !form) break;
         /* The form's own transform is the symbol's centre. The ink's path is
            not usable for this: its start point is a midpoint of a ring that
            wobbles as the surface ripples, so it moves even when the blob does
@@ -593,21 +593,21 @@ for (const [name, options] of [
 
         /* The hold: the form is fully opaque, so the ink under it must be
            gone entirely — not merely small. */
-        if (form.attrs.opacity === "1.000" && echo.d !== "") holdWithInk++;
+        if (form.attrs.opacity === "1.000" && blot.d !== "") holdWithInk++;
 
         if (previous && centre) {
             const moved = Math.abs(centre[0] - previous[0]) > 1 || Math.abs(centre[1] - previous[1]) > 1;
             if (moved) {
                 if (firstFly === null) {
                     firstFly = i;
-                    firstFlyInk = echo.d !== "";
+                    firstFlyInk = blot.d !== "";
                 }
                 if (opacity > 0.02) movedWhileForm++;
             }
         }
         previous = centre;
         if (formGone === null && opacity <= 0.02 && i > 4) formGone = i;
-        if (echo.d === "" && form.attrs.opacity === "0") break;
+        if (blot.d === "" && form.attrs.opacity === "0") break;
     }
 
     check("break: the pattern is gone before the ink starts to move",

@@ -94,15 +94,15 @@
 
         /* These are the real page elements, not screenshots or duplicate links.
            One clock drives the whole scene: render(t) for t in [0, 1], and the
-           recall is the same film run backwards. Echoes are paths inside the
+           recall is the same film run backwards. Blots are paths inside the
            character's own SVG, so they bud from the body through its goo
            filter; each lands as a band of ink shaped like its target, and the
            target condenses out of that ink through a threshold filter. */
         var SVG_NS = "http://www.w3.org/2000/svg";
         var ENTER = 2200;
         var RECALL = 1800;
-        /* One echo per entry. An entry that matches several elements lands as
-           one echo that splits in flight. */
+        /* One blot per entry. An entry that matches several elements lands as
+           one blot that splits in flight. */
         var TARGETS = [
             ".fluid-ip-home-info > .entry-header",
             ".fluid-ip-home-info > .entry-content",
@@ -112,10 +112,10 @@
         ];
         // Reading content only fades in: no card movement.
         var QUIET = "#menu, .main > :not(.home-info), .footer";
-        // Painted body: centre and radius in SVG units; echo radius likewise.
+        // Painted body: centre and radius in SVG units; blot radius likewise.
         var BODY = [256, 250];
         var BODY_R = 250;
-        var ECHO_R = 46;
+        var BLOT_R = 46;
         var POINTS = 16;
 
         function rgb(value) {
@@ -136,7 +136,7 @@
             var ease = Ink.ease;
             var smooth = Ink.smooth;
             var svg = orb.querySelector("svg");
-            var budLayer = orb.querySelector(".fluid-ip-echoes");
+            var blotLayer = orb.querySelector(".fluid-ip-blots");
             var formLayer = orb.querySelector(".fluid-ip-forms");
             var goo = svg.querySelector("#fluid-ip-goo");
 
@@ -214,7 +214,7 @@
 
             var primary = rgb(window.getComputedStyle(orb).color);
             var bodyCentre = toScreen0(BODY);
-            var echoes = [];
+            var blots = [];
             TARGETS.forEach(function (selector) {
                 var nodes = [];
                 Array.prototype.forEach.call(document.querySelectorAll(selector), function (el) {
@@ -239,7 +239,7 @@
                     });
                 });
                 if (!nodes.length) return;
-                var i = echoes.length;
+                var i = blots.length;
                 var T = [0, 0];
                 nodes.forEach(function (n) {
                     T[0] += n.x / nodes.length;
@@ -256,7 +256,7 @@
                     b: 0.03 + 0.03 * i,
                     phase: i * 1.7,
                     u0: [BODY[0] + dir[0] * BODY_R * 0.55, BODY[1] + dir[1] * BODY_R * 0.55],
-                    u1: [BODY[0] + dir[0] * (BODY_R + ECHO_R * 1.25), BODY[1] + dir[1] * (BODY_R + ECHO_R * 1.25)],
+                    u1: [BODY[0] + dir[0] * (BODY_R + BLOT_R * 1.25), BODY[1] + dir[1] * (BODY_R + BLOT_R * 1.25)],
                     R1: Math.max(10, Math.min(20, Math.min.apply(null, nodes.map(function (n) { return n.ry; }))))
                 };
                 e.r = e.b + 0.11;
@@ -269,7 +269,7 @@
                 var before = bodyAt(e.r - 0.0001).toScreen(e.u1);
                 var after = bodyAt(e.r + 0.0001).toScreen(e.u1);
                 e.V = [(after[0] - before[0]) / 0.0002, (after[1] - before[1]) / 0.0002];
-                e.R0 = ECHO_R * release.scale;
+                e.R0 = BLOT_R * release.scale;
                 var arc = bow(e.P, T);
                 var mid = [(e.P[0] + T[0]) / 2, (e.P[1] + T[1]) / 2];
                 var bend = Math.min(110, arc[2] * 0.22);
@@ -278,19 +278,19 @@
                 e.paths = nodes.map(function () {
                     return document.createElementNS(SVG_NS, "path");
                 });
-                echoes.push(e);
+                blots.push(e);
             });
-            /* Echoes leaving in similar directions share one goo group, so they
+            /* Blots leaving in similar directions share one goo group, so they
                fuse and part like ink instead of overlapping with a crease.
                Distant groups stay apart to keep each filter region small. */
             var clusters = [];
-            echoes.slice().sort(function (a, b) { return a.angle - b.angle; }).forEach(function (e, i, sorted) {
+            blots.slice().sort(function (a, b) { return a.angle - b.angle; }).forEach(function (e, i, sorted) {
                 if (!i || e.angle - sorted[i - 1].angle > 1.05) {
                     var filter = goo.cloneNode(true);
-                    filter.setAttribute("id", "fluid-echo-goo-" + clusters.length);
+                    filter.setAttribute("id", "fluid-blot-goo-" + clusters.length);
                     goo.parentNode.appendChild(filter);
                     var group = document.createElementNS(SVG_NS, "g");
-                    group.setAttribute("filter", "url(#fluid-echo-goo-" + clusters.length + ")");
+                    group.setAttribute("filter", "url(#fluid-blot-goo-" + clusters.length + ")");
                     svg.insertBefore(group, formLayer);
                     clusters.push({ filter: filter, group: group, box: null });
                 }
@@ -300,7 +300,7 @@
             var portalFill = rgb(window.getComputedStyle(portal).backgroundColor);
             var lastLook = "";
 
-            function drawEcho(e, t, body) {
+            function drawBlot(e, t, body) {
                 var shapes = [];
                 var inBody = false;
                 var tint = 0;
@@ -311,7 +311,7 @@
                     x = (t - e.b) / (e.r - e.b);
                     var k = ease(x);
                     var p = body.toScreen([mix(e.u0[0], e.u1[0], k), mix(e.u0[1], e.u1[1], k)]);
-                    var R = ECHO_R * smooth(x / 0.55) * body.scale;
+                    var R = BLOT_R * smooth(x / 0.55) * body.scale;
                     e.nodes.forEach(function () {
                         shapes.push([p[0], p[1], R, R, 0, R, 1]);
                     });
@@ -344,7 +344,7 @@
                     // Fused with the body until clear of its reach, so the
                     // neck pinches off instead of snapping.
                     var uq = body.toUser(q);
-                    inBody = Math.sqrt(Math.pow(uq[0] - BODY[0], 2) + Math.pow(uq[1] - BODY[1], 2)) < BODY_R + ECHO_R + 40;
+                    inBody = Math.sqrt(Math.pow(uq[0] - BODY[0], 2) + Math.pow(uq[1] - BODY[1], 2)) < BODY_R + BLOT_R + 40;
                     tint = smooth((x - 0.2) / 0.8);
                 } else if (t >= e.l && t < e.s + 0.05) {
                     // Landing: spreads into the target's band, then lets go.
@@ -374,7 +374,7 @@
                 var colour = "rgb(" + [0, 1, 2].map(function (c) {
                     return Math.round(mix(primary[c], e.nodes[0].color[c], tint));
                 }).join(",") + ")";
-                var layer = inBody ? budLayer : e.cluster.group;
+                var layer = inBody ? blotLayer : e.cluster.group;
                 e.paths.forEach(function (path, j) {
                     var s = shapes[j];
                     attr(path, "d", s ? Ink.path(Ink.blob(s[0], s[1], s[2], s[3], s[4],
@@ -422,10 +422,10 @@
                 clusters.forEach(function (c) {
                     c.box = [Infinity, Infinity, -Infinity, -Infinity];
                 });
-                echoes.forEach(function (e) {
-                    drawEcho(e, t, body);
+                blots.forEach(function (e) {
+                    drawBlot(e, t, body);
                 });
-                // Keep each filter region tight around its echoes: cost follows area.
+                // Keep each filter region tight around its blots: cost follows area.
                 clusters.forEach(function (c) {
                     var b = c.box[0] < Infinity ? c.box : [0, 0, 0, 0];
                     // Round outward on a small grid: preserve blur padding
@@ -443,7 +443,7 @@
                 var gaze = [0, 0];
                 if (t > 0.01 && t < 0.72) {
                     gaze = [travelDir[0] * 0.6, travelDir[1] * 0.6];
-                    echoes.forEach(function (e) {
+                    blots.forEach(function (e) {
                         if (t >= e.b - 0.02 && t < e.r + 0.06) gaze = e.dir;
                     });
                 }
@@ -464,7 +464,7 @@
                     c.group.remove();
                     c.filter.remove();
                 });
-                echoes.forEach(function (e) {
+                blots.forEach(function (e) {
                     e.paths.forEach(function (path) { path.remove(); });
                     e.nodes.forEach(function (n) {
                         n.melt.remove();

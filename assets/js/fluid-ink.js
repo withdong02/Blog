@@ -27,7 +27,7 @@
        `angle`; square 1 is an ellipse, lower values flatten it towards a
        rounded band. The ripple is measured in screen directions, so changing
        `angle` on a round blob never makes its outline jump. amp is the ripple
-       amplitude in the caller's units (the blob radius gives a lively echo,
+       amplitude in the caller's units (the blob radius gives a lively blot,
        a pixel or two a calm band). */
     function blob(cx, cy, rx, ry, angle, phase, amp, square, n) {
         var cos = Math.cos(angle);

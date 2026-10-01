@@ -80,11 +80,11 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
     const svg = orb.appendChild(node("svg", { getScreenCTM: () => ({ a: 0.6, b: 0, c: 0, d: 0.6, e: 100, f: 100 }) }));
     const defs = svg.appendChild(node("defs"));
     const goo = defs.appendChild(node("filter"));
-    const budLayer = svg.appendChild(node("g"));
+    const blotLayer = svg.appendChild(node("g"));
     const formLayer = svg.appendChild(node("g"));
     const eyes = [node("g"), node("g")];
     svg.select = { "#fluid-ip-goo": [goo] };
-    orb.select = { svg: [svg], ".fluid-ip-echoes": [budLayer], ".fluid-ip-forms": [formLayer], ".fluid-ip-eye": eyes };
+    orb.select = { svg: [svg], ".fluid-ip-blots": [blotLayer], ".fluid-ip-forms": [formLayer], ".fluid-ip-eye": eyes };
     const portal = node("div", { computed: { backgroundColor: "rgb(245, 245, 245)" } });
     const text = (left, top, width, height, fontSize) =>
         main.appendChild(node("div", { rect: { left, top, width, height }, computed: { fontSize } }));
@@ -158,7 +158,7 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
         frames.clear();
         due.forEach(fn => fn(now));
     }
-    return { root, orb, portal, home, main, menu, budLayer, window, document, handlers, eyes, targets, homeLink, created, frames, tick, shapes, writes: () => writes };
+    return { root, orb, portal, home, main, menu, blotLayer, window, document, handlers, eyes, targets, homeLink, created, frames, tick, shapes, writes: () => writes };
 }
 
 // Everything a scene touched is back as it was, and no frame is pending.
@@ -182,7 +182,7 @@ function snap(h) {
         h.orb.style.transform, h.portal.style.backgroundColor, h.menu.style.opacity, h.eyes[0].style.transform,
         h.targets.map(t => [t.style.opacity, !!t.style.filter]),
         live("feGaussianBlur").map(n => n.attrs.stdDeviation), live("feMorphology").map(n => n.attrs.radius),
-        live("path").map(p => [p.parentNode === h.budLayer, p.attrs.d, p.attrs["fill-opacity"], p.style.fill])
+        live("path").map(p => [p.parentNode === h.blotLayer, p.attrs.d, p.attrs["fill-opacity"], p.style.fill])
     ]);
 }
 
@@ -237,7 +237,7 @@ console.log("fluid entrance checks passed");
         enter[ms / ENTER] = snap(h);
         if (ms === ENTER / 2) {
             assert.ok(h.targets.every(t => t.style.filter), "every target waits as melted ink");
-            assert.ok(h.created.some(n => n.tagName === "path" && n.isConnected && n.attrs.d), "echoes are in flight");
+            assert.ok(h.created.some(n => n.tagName === "path" && n.isConnected && n.attrs.d), "blots are in flight");
             assert.ok(+h.menu.style.opacity > 0 && +h.menu.style.opacity < 1, "reading content fades in");
         }
     }
