@@ -16,6 +16,21 @@
        see docs/design/fluid-ink.md. Site-wide and before fluid-ip.js. */ -}}
 {{- $fluidInkJs := resources.Get "js/fluid-ink.js" | minify | fingerprint "sha256" }}
 <script src="{{ $fluidInkJs.RelPermalink }}" integrity="{{ $fluidInkJs.Data.Integrity }}" defer></script>
+{{- /* Reading-progress ink (scenario D): a clone of the mark rides the tip of
+       the progress bar on article pages — see assets/js/fluid-read.js. Site-wide
+       after toc-sidebar.js and fluid-ink.js (defer keeps the order); it gates
+       itself on window.TocRail, so pages without the rail cost one if. */ -}}
+{{- $fluidReadJs := resources.Get "js/fluid-read.js" | minify | fingerprint "sha256" }}
+<script src="{{ $fluidReadJs.RelPermalink }}" integrity="{{ $fluidReadJs.Data.Integrity }}" defer></script>
+{{- /* Clipboard ink (scenario E): the theme's own "copy" button on a code
+       block melts into ink and resolves into "copied!" — see
+       assets/js/fluid-copy.js. Site-wide after fluid-ink.js (which it uses to
+       do the melting); it gates itself on the pointer and width queries, so
+       narrow screens and touch cost one matchMedia each. The copy button is
+       created by PaperMod's inline script above, which runs before any defer
+       script, so every button already exists by the time this loads. */ -}}
+{{- $fluidCopyJs := resources.Get "js/fluid-copy.js" | minify | fingerprint "sha256" }}
+<script src="{{ $fluidCopyJs.RelPermalink }}" integrity="{{ $fluidCopyJs.Data.Integrity }}" defer></script>
 {{- /* Home-page fluid avatar (蕫冬咚) — see assets/js/fluid-ip.js and
        docs/design/fluid-ip.md. Only the home page carries the figure, so only
        the home page loads the script; on the paginated pages past the first

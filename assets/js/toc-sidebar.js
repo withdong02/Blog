@@ -234,12 +234,45 @@
         tick.addEventListener("blur", hidePreview);
     });
 
-    /* --- progress --- */
-    function updateProgress() {
-        var max = document.documentElement.scrollHeight - window.innerHeight;
-        var p = max > 0 ? Math.min(1, Math.max(0, window.pageYOffset / max)) : 0;
+    /* --- progress ---
+       The bar is also the ink line the reading mark drags behind it (scenario D
+       in docs/design/fluid-ink.md), so it exposes a hook instead of hiding the
+       number: the attachment has to write the same value on the same clock —
+       with its CSS transition left on, the line would glide towards the target
+       while the mark jumped straight to it, and the mark would run ahead of the
+       line. `drive(true)` hands the writing over; `drive(false)` takes it back. */
+    var progress = 0;
+    var driver = null;
+    var progressListeners = [];
+
+    function paint(p) {
         bar.style.transform = "scaleX(" + p.toFixed(4) + ")";
     }
+
+    function updateProgress() {
+        var max = document.documentElement.scrollHeight - window.innerHeight;
+        progress = max > 0 ? Math.min(1, Math.max(0, window.pageYOffset / max)) : 0;
+        if (!driver) paint(progress);
+        for (var i = 0; i < progressListeners.length; i++) progressListeners[i](progress);
+    }
+
+    window.TocRail = {
+        bar: bar,
+        value: function () { return progress; },
+        onProgress: function (fn) {
+            progressListeners.push(fn);
+            fn(progress);
+        },
+        /* `true` hands the writing over to the caller, `false` takes it back.
+           The transition is what the owner replaces: one clock, not two. */
+        drive: function (on) {
+            var owned = !!on;
+            if (owned === !!driver) return;
+            driver = owned;
+            bar.classList.toggle("toc-progress-fluid", owned);
+            if (!owned) paint(progress);
+        }
+    };
 
     var ticking = false;
     window.addEventListener("scroll", function () {

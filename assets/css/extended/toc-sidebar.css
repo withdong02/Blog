@@ -55,6 +55,14 @@
     transition: transform var(--ds-duration-fast) linear;
 }
 
+/* Set while the reading mark drives the bar from its own clock (scenario D):
+   left on, the transition would interpolate towards the target on its own, so
+   the line and the mark would disagree for the length of the transition. It has
+   to come after .toc-progress to win — same specificity, later rule. */
+.toc-progress-fluid {
+    transition: none;
+}
+
 /* keep anchor-jumped headings clear of the fixed progress bar */
 .md-content :is(h2, h3, h4, h5, h6) {
     scroll-margin-top: 12px;

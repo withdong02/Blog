@@ -19,8 +19,16 @@
 - **A 入口转场**（`fluid-transition.js`）：进场约 2.2s、收回约 1.8s。主体挤压回弹并出芽 → 回声依次缢缩脱离 → 主体沿弧线移到介绍区并缩小；回声弧线飞行、按速度拉伸，落地舒展成标题、简介、社交栏（一团分成三个图标）、导航 logo、右下角两键（共用一颗，末段一分为二）的墨带，再按原语 3 交接。导航与文章卡片只淡入不位移。取代旧的 `.fluid-page-echo` span 方案。
 - **B 墨水换色**：主题键点击后以 View Transition + `clip-path: path(blob)` 从按钮漫开约 800ms；期间屏蔽 `.theme-transition` 颜色过渡。不支持或减少动态效果时维持原切换。翻转逻辑与 PaperMod 一致（`data-theme` + `localStorage 'pref-theme'`）。
 - **C 首页墨团鼠标物理**（`fluid-ip.js`）：按住拖动，墨团跟着指针走并被拉长；指针方向决定形变轴向，指针速度决定形变量，松手后在 140px 内回弹、超出则断开成回声、借用规格数组的形态停留后回融。拖动超过 6px 不算点击。弹簧静止即停 rAF。（当前实现与"靠近出芽、拉出墨颈"的原始设想仍有差距，见文末 C 阶段修正。）
-- **D 阅读进度附着**：文章页（有 `.toc-progress`）滚过导航后，克隆的 `.fluid-mark` 挂在进度条尖端，进度条是它拖出的墨线；滚动速度决定前倾与眼神，静止弹簧回正后停 rAF，`pointer-events: none`。文末签名进入视口时它缩回条内，签名形象从墨池冒出一次（IntersectionObserver 加 class，无 JS 时静态）。
-- **E 复制按钮墨变**：代码块按钮文本变化时用原语 2 墨化再转清晰（约 400ms），MutationObserver 监听，不改 PaperMod 复制逻辑。
+- **D 阅读进度附着**（2026-09-30 实现，`assets/js/fluid-read.js` + `fluid-ip.css` 的 `.fluid-read-blob`／`fluid-signoff-risen`）：文章页（有 `.toc-progress`）滚过导航后，克隆的 `.fluid-mark` 挂在进度条尖端，进度条是它拖出的墨线；它像挂在条上的篮子——条的加速度把它甩向一侧，条停下后左右摆动、逐次衰减、最终垂直静止（阻尼摆，周期 1.1s、阻尼比 0.2，见 `fluid-read.js` 头注释），摆停即停 rAF，`pointer-events: none`。文末签名进入视口时它缩回条内，签名形象从墨池冒出一次（IntersectionObserver 加 class，关键帧的 `to` 就是终态，无 JS 时静态）。
+  - **进度条与墨团必须同一个时钟**：`toc-sidebar.js` 只暴露钩子 `window.TocRail`（`bar`、`value()`、`onProgress(cb)`、`drive(true|false)`），附着时连同去掉 CSS `transition` 的 `.toc-progress-fluid` 一起接管 `scaleX` 的写入。留着过渡，条会自己朝目标插值、墨团却直接跳到目标，墨团就跑在条前面。
+  - 实测（2026-09-30）：浏览器 14 项全过（挂载门槛、接管、墨团落在尖端 leaning 随速度、静止后 rAF 计数不再增长且前倾回正、文末缩回并冒出一次、800px 与减少动态效果下不挂载且条交还、无控制台报错）。过程中修掉一个真 Bug：拿了 `drive(true)` 却没写条，进度条被冻结在 `scaleX(0)`——**谁接管谁负责写**。
+  - 检查脚本 `docs/design/fluid-read-check.mjs`（假 DOM + 手驱时钟）：门槛、移交与归还、尖端位置、静止停帧、中途失效的摘除与恢复、文末只冒出一次、页面隐藏停帧。
+- **E 复制按钮墨变**（2026-10-01 实现，`assets/js/fluid-copy.js`）：代码块右上角 PaperMod 自己的 `.copy-code` 按钮，「复制 → 已复制！→ 2s 后变回」都让文字化成墨团再转清晰，约 400ms。用 MutationObserver 监听按钮自身的子树变化，**不改 PaperMod 的复制逻辑、也不替换按钮**。三个实测确立的约束：
+  - 起始的墨化值必须写在 **MutationObserver 回调里同步执行**（该回调是微任务，落在 DOM 写入之后、绘制之前）；放到下一帧再墨化，新的清晰文案就会先闪一帧。浏览器实测第一帧 `style.filter` 已是 `url("#fluid-melt-1")`，文案未被清晰绘制过。
+  - **`display: none` 时必须跳过**：按钮默认隐藏、只在悬停代码块时出现，而 2s 后自动变回时指针往往已经离开；给隐藏元素墨化会建出一个 0×0 的滤镜区域。这一条是常态而非边缘情况。
+  - 同一文案重复写入（连点两次）不重复墨化；动画中途再次变化要先清理上一个（RM `filter`、移除临时滤镜节点）再开始，不叠加。
+
+  门槛为宽屏（≥900px）、精细指针、未要求减少动态效果；未满足时完全不介入——实测减少动态效果下 PaperMod 原生的文案切换照常发生、且不留任何 `filter`。
 
 ## 验证
 

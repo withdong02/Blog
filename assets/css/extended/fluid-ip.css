@@ -72,6 +72,34 @@
 .fluid-signoff-link > span { display: inline-block; margin-left: 8px; }
 .fluid-signoff:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; }
 
+/* ---- Reading progress attachment (scenario D, assets/js/fluid-read.js) ---- */
+
+/* The clone rides the tip of .toc-progress: out of the flow, above the 3px line,
+   and never a pointer target. Every transform on it is written per frame. */
+.fluid-read-blob {
+    position: fixed;
+    top: -6px;
+    left: 0;
+    width: 28px;
+    height: 28px;
+    z-index: 61;
+    pointer-events: none;
+    will-change: transform;
+    transform: scale(0);
+    /* The pivot is where it meets the line, not its middle: rotating about the
+       centre would spin it like a wheel on an axle, while this swings the whole
+       body underneath the line the way a basket hangs from a rope. Six px down
+       from its own top edge is exactly the line. */
+    transform-origin: 50% 6px;
+}
+
+/* The hover transition above is 650ms; left on the clone it would lag behind
+   the per-frame lean and smear every movement. */
+.fluid-read-blob .fluid-mark-body,
+.fluid-read-blob .fluid-mark-eyes {
+    transition: none;
+}
+
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
     .logo a:hover .fluid-mark-eyes,
     .fluid-signoff:hover .fluid-mark-eyes { transform: translate(22px, -12px); }
@@ -81,6 +109,28 @@
 @media (prefers-reduced-motion: no-preference) {
     .logo a:focus-visible .fluid-mark-eyes,
     .fluid-signoff:focus-visible .fluid-mark-eyes { transform: translate(22px, -12px); }
+
+    /* Out of the ink pool once, when the signoff scrolls into view. Without
+       JavaScript the class never lands, so the figure is simply already there —
+       and `to` is the resting state, so nothing depends on the animation. */
+    .fluid-signoff-risen .fluid-signoff-figure {
+        animation: fluid-signoff-rise 900ms cubic-bezier(.22, 1, .36, 1) both;
+    }
+
+    .fluid-signoff-risen .fluid-signoff-figure::after {
+        animation: fluid-signoff-pool 900ms cubic-bezier(.22, 1, .36, 1) both;
+    }
+}
+
+@keyframes fluid-signoff-rise {
+    from { transform: translateY(16px) scale(.82); opacity: 0; }
+    60% { transform: translateY(-4px) scale(1.03); opacity: 1; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes fluid-signoff-pool {
+    from { transform: scaleX(.35); opacity: .45; }
+    to { transform: none; opacity: 1; }
 }
 
 @media (max-width: 480px) {
