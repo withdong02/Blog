@@ -154,7 +154,7 @@
         }
         var Ink = window.FluidInk;
         if (!document.startViewTransition ||
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches || !Ink) {
+            !Ink) {
             flip();
             return;
         }

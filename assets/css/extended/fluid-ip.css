@@ -13,7 +13,7 @@
  *
  * Layout is width-driven, interaction is capability-driven. Below 900px the
  * figure sits below the intro text; from 900px up it sits beside it. Only a
- * fine pointer that can hover, on a wide viewport, without reduced motion,
+ * fine pointer that can hover, on a wide viewport,
  * gets a clickable figure — and that decision is made by fluid-ip.js, which
  * enables the button. CSS just follows the button's disabled state, so both
  * sides share one threshold.
@@ -100,26 +100,24 @@
     transition: none;
 }
 
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+@media (hover: hover) and (pointer: fine) {
     .logo a:hover .fluid-mark-eyes,
     .fluid-signoff:hover .fluid-mark-eyes { transform: translate(22px, -12px); }
     .fluid-signoff:hover .fluid-mark-body { transform: skewX(-4deg) scale(1.035, .98); }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .logo a:focus-visible .fluid-mark-eyes,
-    .fluid-signoff:focus-visible .fluid-mark-eyes { transform: translate(22px, -12px); }
+.logo a:focus-visible .fluid-mark-eyes,
+.fluid-signoff:focus-visible .fluid-mark-eyes { transform: translate(22px, -12px); }
 
-    /* Out of the ink pool once, when the signoff scrolls into view. Without
-       JavaScript the class never lands, so the figure is simply already there —
-       and `to` is the resting state, so nothing depends on the animation. */
-    .fluid-signoff-risen .fluid-signoff-figure {
-        animation: fluid-signoff-rise 900ms cubic-bezier(.22, 1, .36, 1) both;
-    }
+/* Out of the ink pool once, when the signoff scrolls into view. Without
+   JavaScript the class never lands, so the figure is simply already there —
+   and `to` is the resting state, so nothing depends on the animation. */
+.fluid-signoff-risen .fluid-signoff-figure {
+    animation: fluid-signoff-rise 900ms cubic-bezier(.22, 1, .36, 1) both;
+}
 
-    .fluid-signoff-risen .fluid-signoff-figure::after {
-        animation: fluid-signoff-pool 900ms cubic-bezier(.22, 1, .36, 1) both;
-    }
+.fluid-signoff-risen .fluid-signoff-figure::after {
+    animation: fluid-signoff-pool 900ms cubic-bezier(.22, 1, .36, 1) both;
 }
 
 @keyframes fluid-signoff-rise {
@@ -218,7 +216,7 @@
 /* Same threshold as fluid-ip.js: wide viewport, hovering fine pointer, motion
    allowed. The :not(:disabled) half means the script is the single authority —
    if it has not enabled the button, nothing here applies. */
-@media screen and (min-width: 900px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+@media screen and (min-width: 900px) and (hover: hover) and (pointer: fine) {
     .fluid-ip-orb:not(:disabled) {
         cursor: pointer;
     }

@@ -203,8 +203,8 @@ function harness({ wide = true, fine = true, reduced = false, rail = true } = {}
     assert.equal(h.frames.size, 0, "the chain stops once it has caught up");
 }
 
-// 2. The gate: any one of the three missing and nothing is added at all.
-for (const off of [{ wide: false }, { fine: false }, { reduced: true }]) {
+// 2. The gate: either viewport or pointer gate missing and nothing is added at all.
+for (const off of [{ wide: false }, { fine: false }]) {
     const h = harness(off);
     assert.equal(h.blob(), null, "nothing attaches without the full gate: " + JSON.stringify(off));
     assert.equal(h.driving(), false, "and the bar is left to itself: " + JSON.stringify(off));
@@ -322,3 +322,12 @@ for (const off of [{ wide: false }, { fine: false }, { reduced: true }]) {
 }
 
 console.log("reading-progress ink: gate, hand-over, tip, swing, idle stop and signoff checks passed");
+
+{
+    const h = harness({ reduced: true });
+    assert.ok(h.blob(), "system reduced motion does not prevent attachment");
+    assert.equal(h.driving(), true);
+    h.scroll(700, 0.08);
+    h.run();
+    assert.equal(h.frames.size, 0);
+}

@@ -207,8 +207,7 @@ function check(name, ok, detail) {
 
 for (const [name, options] of [
     ["narrow viewport", { wide: false }],
-    ["coarse pointer", { fine: false }],
-    ["reduced motion", { reduced: true }]
+    ["coarse pointer", { fine: false }]
 ]) {
     const h = makeHarness(options);
     h.click();
@@ -659,6 +658,15 @@ for (const [name, options] of [
         outside === 0, `framesOutside=${outside}`);
     check("edge: it is still moving when the pointer leaves the window",
         moving > 8, `movingFrames=${moving}`);
+}
+
+
+{
+    const h = makeHarness({ reduced: true });
+    h.click();
+    check("system reduced motion still allows the animation", !h.orb.disabled && h.pending() > 0);
+    h.runFor(12000);
+    check("system reduced motion animation stops cleanly", h.pending() === 0);
 }
 
 console.log(failures === 0 ? "\nall checks passed" : `\n${failures} check(s) failed`);

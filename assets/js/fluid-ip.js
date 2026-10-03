@@ -13,8 +13,8 @@
  * an blot is a one-line change here and nothing assumes three of them.
  *
  * Interaction is gated on exactly what fluid-ip.css gates on: at least 900px
- * wide, a fine pointer that can hover, and no reduced-motion request. Failing
- * any of the three leaves the button disabled — not focusable, not clickable —
+ * wide, a fine pointer that can hover. Failing
+ * either condition leaves the button disabled — not focusable, not clickable —
  * so the static figure never presents a control that does nothing.
  *
  * Frames run only while an animation is in flight: one rAF chain per click, no
@@ -112,7 +112,6 @@
 
     var wide = window.matchMedia("(min-width: 900px)");
     var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
-    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     function ease(x) {
         return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(2 - 2 * x, 3) / 2;
@@ -226,7 +225,7 @@
     }
 
     function interactive() {
-        return !reduced.matches && wide.matches && fine.matches;
+        return wide.matches && fine.matches;
     }
 
     /* Single source of truth for "can this figure be clicked": keeps the
@@ -263,7 +262,7 @@
         if (document.hidden) stop();
     });
 
-    [wide, fine, reduced].forEach(function (mq) {
+    [wide, fine].forEach(function (mq) {
         if (mq.addEventListener) mq.addEventListener("change", sync);
         else if (mq.addListener) mq.addListener(sync);
     });
@@ -795,7 +794,7 @@
         breakRaf = window.requestAnimationFrame(breakFrame);
     }
 
-    [wide, fine, reduced].forEach(function (mq) {
+    [wide, fine].forEach(function (mq) {
         if (mq.addEventListener) mq.addEventListener("change", function () {
             if (!interactive()) stopPull();
         });

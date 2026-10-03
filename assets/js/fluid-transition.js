@@ -7,7 +7,6 @@
     if (window.location.pathname !== homePath) return;
 
     var root = document.documentElement;
-    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
     if (!window.location.hash) root.classList.add("fluid-portal-active");
 
@@ -76,7 +75,7 @@
         }
         var lookRaf = 0;
         window.addEventListener("pointermove", function (event) {
-            if (!fine.matches || reduced.matches || entering) return;
+            if (!fine.matches || entering) return;
             var cx = event.clientX, cy = event.clientY;
             if (lookRaf) return;
             lookRaf = requestAnimationFrame(function () {
@@ -502,7 +501,7 @@
                 }
             }
             endScene = complete;
-            if (reduced.matches || !wide.matches || !fine.matches || !window.FluidInk || !window.requestAnimationFrame) {
+            if (!wide.matches || !fine.matches || !window.FluidInk || !window.requestAnimationFrame) {
                 complete(true);
                 return;
             }
@@ -542,7 +541,6 @@
         document.addEventListener("visibilitychange", function () {
             if (document.hidden) settle();
         });
-        if (reduced.addEventListener) reduced.addEventListener("change", settle);
 
         function syncLocation() {
             if (endScene) endScene(false);

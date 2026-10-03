@@ -25,7 +25,6 @@
 
     var wide = window.matchMedia("(min-width: 900px)");
     var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
-    var still = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     /* Feel. The mark hangs from the line like a basket on a rope, so it is a
        pendulum on a moving pivot rather than something that merely tips: while
@@ -86,7 +85,7 @@
     var attached = false;
 
     function eligible() {
-        return wide.matches && fine.matches && !still.matches;
+        return wide.matches && fine.matches;
     }
 
     function measure() {
@@ -285,7 +284,6 @@
 
     watch(wide, reevaluate);
     watch(fine, reevaluate);
-    watch(still, reevaluate);
 
     function reevaluate() {
         if (eligible()) attach();

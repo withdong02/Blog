@@ -89,9 +89,3 @@
         width: min(82vw, 430px);
     }
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .fluid-ip-eye {
-        transition: none;
-    }
-}

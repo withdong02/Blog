@@ -187,7 +187,7 @@ function snap(h) {
 }
 
 {
-    const h = harness();
+    const h = harness({ fine: false });
     assert.equal(h.root.classList.contains("fluid-portal-active"), true);
     h.handlers.DOMContentLoaded();
     assert.equal(h.orb.parentNode, h.portal);
@@ -297,7 +297,7 @@ console.log("fluid entrance checks passed");
 }
 console.log("one-clock entrance, reversed recall, modifiers and interruption checks passed");
 
-for (const options of [{ wide: false }, { fine: false }, { reduced: true }, { ink: false }]) {
+for (const options of [{ wide: false }, { fine: false }, { ink: false }]) {
     const h = harness({ reduced: false, ...options });
     h.handlers.DOMContentLoaded();
     h.orb.handlers.click();
@@ -306,7 +306,7 @@ for (const options of [{ wide: false }, { fine: false }, { reduced: true }, { in
     assert.equal(h.window.location.hash, "#articles");
     assert.equal(h.main.inert, false);
 }
-console.log("narrow, touch, reduced-motion and no-ink entrances remain operable without animation");
+console.log("narrow, touch and no-ink entrances remain operable without animation");
 
 // Motion continuity: a release must not halt; a landed band starts spreading
 // at zero speed instead of jumping to its full expansion velocity.
@@ -333,3 +333,12 @@ console.log("narrow, touch, reduced-motion and no-ink entrances remain operable 
     assertClean(h);
 }
 console.log("release velocity, soft landing and unchanged-attribute checks passed");
+
+{
+    const h = harness({ reduced: true });
+    h.handlers.DOMContentLoaded();
+    h.orb.handlers.click();
+    assert.ok(h.frames.size > 0, "system reduced motion still starts entrance animation");
+    for (let i = 0; i < 180; i++) h.tick(i * 16);
+    assertClean(h);
+}
