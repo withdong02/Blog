@@ -94,17 +94,23 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
     const intro = text(80, 170, 380, 22, "16px");
     const social = text(80, 205, 120, 30, "16px");
     const homeLink = text(20, 10, 90, 30, "24px");
+    const tools = body.appendChild(node("div"));
+    const toolToggle = tools.appendChild(node("button", { rect: { left: 1300, top: 620, width: 44, height: 44 }, computed: { backgroundColor: "rgb(214, 214, 214)" } }));
     const toggle = control(1300, 620);
     const top = control(1300, 670);
+    tools.appendChild(toggle);
+    tools.appendChild(top);
     const menu = main.appendChild(node("ul"));
-    const targets = [title, intro, social, homeLink, toggle, top];
+    const targets = [title, intro, social, homeLink, toolToggle];
     const select = {
         ".logo > a": [homeLink],
         ".fluid-ip-home-info > .entry-header": [title],
         ".fluid-ip-home-info > .entry-content": [intro],
         ".fluid-ip-home-info .social-icons": [social],
-        "#theme-toggle, #top-link": [toggle, top],
-        "#menu, .main > :not(.home-info), .footer": [menu]
+        ".reading-tools": [tools],
+        ".tools-toggle, body > #theme-toggle, body > #top-link": [toolToggle],
+        "#menu, .main > :not(.home-info), .footer": [menu],
+        "#menu, .main > :not(.home-info), .footer, .logo > a": [menu, homeLink]
     };
     const root = {
         classList: {
@@ -158,7 +164,7 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
         frames.clear();
         due.forEach(fn => fn(now));
     }
-    return { root, orb, portal, home, main, menu, blotLayer, window, document, handlers, eyes, targets, homeLink, created, frames, tick, shapes, writes: () => writes };
+    return { root, orb, portal, home, main, menu, tools, toggle, top, blotLayer, window, document, handlers, eyes, targets, homeLink, created, frames, tick, shapes, writes: () => writes };
 }
 
 // Everything a scene touched is back as it was, and no frame is pending.
@@ -193,6 +199,8 @@ function snap(h) {
     assert.equal(h.orb.parentNode, h.portal);
     assert.equal(h.main.inert, true);
     h.orb.handlers.click();
+    h.tick(0);
+    h.tick(2000);
     assert.equal(h.window.location.hash, "#articles");
     assert.equal(h.orb.parentNode, h.home);
     assert.equal(h.main.inert, false);
@@ -301,12 +309,33 @@ for (const options of [{ wide: false }, { fine: false }, { ink: false }]) {
     const h = harness({ reduced: false, ...options });
     h.handlers.DOMContentLoaded();
     h.orb.handlers.click();
-    assert.equal(h.frames.size, 0);
-    assert.equal(h.created.length, 0);
+    assert.equal(h.frames.size, 1);
+    assert.equal(h.tools.inert, true, 'entrance tools reject keyboard input');
+    h.tick(0);
+    if (options.ink !== false) {
+        h.tick(700);
+        assert.ok(h.shapes.length > 0, 'mobile entrance visibly separates ink');
+        assert.ok(h.targets.slice(0, 3).every(t => t.style.filter), 'intro is revealed through ink');
+        assert.ok(h.targets.slice(4).every(t => t.style.filter), 'mobile tool button is revealed through ink');
+        assert.ok(h.menu.style.opacity !== undefined, 'mobile navigation participates in fade');
+        assert.ok(!h.toggle.style.filter && !h.top.style.filter, 'hidden child controls are not ink targets');
+        h.tick(950);
+        assert.ok(h.shapes.length > 0, 'fourth ink flight remains visible before landing');
+    }
+    h.tick(2000);
+    assertClean(h);
     assert.equal(h.window.location.hash, "#articles");
     assert.equal(h.main.inert, false);
+    assert.equal(h.tools.inert, false, 'tools become operable after entrance');
+    h.homeLink.handlers.click({ button: 0, preventDefault() {} });
+    h.tick(1000);
+    h.tick(options.ink === false ? 1650 : 2600);
+    assertClean(h);
+    assert.equal(h.orb.parentNode, h.portal);
+    assert.equal(h.main.inert, true);
+    assert.equal(h.tools.inert, true, 'tools remain inert at the portal');
 }
-console.log("narrow, touch and no-ink entrances remain operable without animation");
+console.log("compact entrances animate and clean up");
 
 // Motion continuity: a release must not halt; a landed band starts spreading
 // at zero speed instead of jumping to its full expansion velocity.

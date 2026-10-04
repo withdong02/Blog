@@ -3,7 +3,8 @@
     display: block; position: fixed; right: max(24px, env(safe-area-inset-right));
     bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 220;
 }
-.fluid-portal-active .reading-tools { display: none; }
+.fluid-portal-active:not(.fluid-composing) .reading-tools { visibility: hidden; }
+.fluid-composing .reading-tools { pointer-events: none; }
 .tools-toggle, .tool-slot > button, .tool-slot > a {
     display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
     border-radius: 50%; background: var(--entry); color: var(--primary);
@@ -15,15 +16,18 @@
 .tools-toggle .tools-close-icon, .tools-toggle[aria-expanded="true"] .tools-open-icon { display: none; }
 .tools-toggle[aria-expanded="true"] .tools-close-icon { display: block; }
 .tools-actions[hidden] { display: none; }
-.tool-slot { position: absolute; width: 44px; height: 44px; animation: tools-unfold .2s ease-out both; }
-.tool-slot-theme { right: 0; bottom: 80px; --tool-x: 0px; --tool-y: 80px; }
-.tool-slot-top { right: 57px; bottom: 57px; --tool-x: 57px; --tool-y: 57px; }
-.tool-slot-toc { right: 80px; bottom: 0; --tool-x: 80px; --tool-y: 0px; }
-@keyframes tools-unfold {
-    from { opacity: 0; transform: translate(var(--tool-x), var(--tool-y)) scale(.8); }
-    to { opacity: 1; transform: none; }
+.tool-slot {
+    position: absolute; width: 44px; height: 44px;
+    right: var(--tool-x); bottom: var(--tool-y);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translate(var(--tool-x), var(--tool-y)) scale(.8);
+    transition: transform .22s cubic-bezier(.22,1,.36,1), opacity .22s ease, visibility 0s .22s;
 }
-@media (prefers-reduced-motion: reduce) { .tool-slot { animation: none; } }
+.tools-actions.is-open .tool-slot {
+    opacity: 1; visibility: visible; pointer-events: auto; transform: none;
+    transition-delay: 0s;
+}
+@media (prefers-reduced-motion: reduce) { .tool-slot { transition-duration: .08s, .08s, 0s; transition-delay: 0s, 0s, .08s; } }
 .reading-tools #theme-toggle, .reading-tools #top-link {
     position: static; margin: 0; transform: none; visibility: visible; opacity: 1;
     width: 44px; height: 44px; padding: 0; color: var(--primary); background: var(--entry);
@@ -49,19 +53,54 @@
 .reading-outline a { display: block; padding: 11px 10px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; border-radius: 5px; }
 .reading-outline a:hover { background: var(--code-bg); }
 .reading-outline a[aria-current] { font-weight: 600; background: var(--code-bg); box-shadow: inset 1px 0 var(--primary); }
-.outline-wide .reading-outline {
-    position: fixed; top: 50%; transform: translateY(-50%);
-    left: calc(50% + var(--main-width) / 2 + 32px);
-    width: min(300px, calc((100vw - var(--main-width)) / 2 - 48px));
-    border: 1px solid var(--tertiary); border-radius: 8px; background: var(--theme);
+.outline-desktop { display: none; }
+.outline-wide .outline-desktop:not([hidden]) {
+    display: block; position: fixed; top: 50%; transform: translateY(-50%);
+    right: max(46px, calc((100vw - var(--main-width)) / 2 - 278px)); z-index: 210;
 }
-@media (min-width: 1360px) and (hover: hover) and (pointer: fine) {
+.outline-rail-list {
+    width: 40px; padding: 4px 0; max-height: 55dvh;
+    overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+}
+.outline-rail-list::-webkit-scrollbar { display: none; }
+.outline-tick { display: flex; align-items: center; justify-content: flex-end; width: 40px; height: 10px; cursor: pointer; }
+.outline-tick span {
+    width: 12px; height: 2px; border-radius: 3px; background: var(--secondary);
+    opacity: var(--tick-opacity, .58);
+    transform-origin: right; transform: scaleX(var(--tick-scale, 1));
+    transition: transform .15s ease-out, opacity .15s ease-out, background-color .15s ease-out;
+}
+.outline-desktop:not(.is-interacting) .outline-tick.is-current span { background: var(--primary); opacity: .9; }
+.outline-tick.is-peaked span { background: var(--primary); }
+.outline-tick:focus-visible { outline: 1px solid var(--primary); outline-offset: -1px; }
+.outline-preview {
+    position: fixed; z-index: 215; width: min(320px, calc(100vw - 32px)); padding: 16px;
+    border: 1px solid var(--tertiary); border-radius: 10px;
+    background: var(--theme); box-shadow: 0 8px 28px rgba(0,0,0,.12);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translateX(8px); transform-origin: right center;
+    transition: opacity .15s ease, transform .15s ease, visibility 0s .15s;
+}
+.outline-wide .outline-preview.is-visible {
+    opacity: 1; visibility: visible; transform: translateX(0);
+    transition-delay: 0s;
+}
+/* Tools and ticks share an axis; a tall outline must not sit under the menu. */
+.reading-tools-open .outline-desktop { visibility: hidden; }
+.outline-wide.reading-tools-open .outline-preview { opacity: 0; visibility: hidden; }
+.outline-preview strong { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 15px; line-height: 1.6; }
+.outline-preview p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 8px 0 0; color: var(--secondary); font-size: 14px; line-height: 1.7; }
+.outline-preview p:empty { display: none; }
+@media (min-width: 1200px) and (hover: hover) and (pointer: fine) {
     .reading-tools-ready .reading-tools { right: max(24px, calc((100vw - var(--main-width)) / 2 - 300px)); }
 }
-.outline-wide .outline-close { display: none; }
-.outline-wide .outline-header { padding: 20px 24px 12px; }
-.outline-wide .outline-body { max-height: max(44px, calc(100dvh - 360px)); padding: 0 24px 20px; }
-.outline-wide .reading-outline a { padding: 8px 10px; font-size: 13px; }
+.outline-wide .outline-header { padding: 16px 20px 8px; }
+.outline-wide .outline-header h2 { font-size: 14px; color: var(--secondary); }
+.outline-wide .outline-body { max-height: 60dvh; padding: 0 16px 16px 20px; }
+.outline-wide .reading-outline ul { padding-left: 14px; }
+.outline-wide .reading-outline ul ul { padding-left: 10px; }
+.outline-wide .reading-outline a { padding: 6px 4px; font-size: 13px; overflow-wrap: break-word; }
+.outline-wide .reading-outline a[aria-current] { box-shadow: inset 2px 0 var(--primary); }
 
 /* Match article code typography across the native and enhanced outlines. */
 .toc .inner, .reading-outline .outline-body {

@@ -37,6 +37,8 @@
             if (header) header.inert = value;
             main.inert = value;
             if (footer) footer.inert = value;
+            var tools = document.querySelector(".reading-tools");
+            if (tools) tools.inert = value;
             ["theme-toggle", "top-link"].forEach(function (id) {
                 var control = document.getElementById(id);
                 if (control) control.inert = value;
@@ -107,7 +109,7 @@
             ".fluid-ip-home-info > .entry-content",
             ".fluid-ip-home-info .social-icons",
             ".logo > a",
-            "#theme-toggle, #top-link"
+            ".tools-toggle, body > #theme-toggle, body > #top-link"
         ];
         // Reading content only fades in: no card movement.
         var QUIET = "#menu, .main > :not(.home-info), .footer";
@@ -130,7 +132,7 @@
             if (node.getAttribute(name) !== value) node.setAttribute(name, value);
         }
 
-        function buildScene() {
+        function buildScene(compact) {
             var Ink = window.FluidInk;
             var ease = Ink.ease;
             var smooth = Ink.smooth;
@@ -169,7 +171,7 @@
                 return ny > 0 ? [-nx, -ny, len] : [nx, ny, len];
             }
             var bodyBow = bow([0, 0], travel);
-            var bodyBend = Math.min(60, travelLen * 0.12);
+            var bodyBend = Math.min(compact ? 24 : 60, travelLen * 0.12);
 
             /* The body at time t: squash and rebound before leaving, then an
                eased arc to the dock, stretched along the way by its speed. */
@@ -214,7 +216,7 @@
             var primary = rgb(window.getComputedStyle(orb).color);
             var bodyCentre = toScreen0(BODY);
             var blots = [];
-            TARGETS.forEach(function (selector) {
+            (compact ? TARGETS.slice(0, 3).concat(TARGETS[4]) : TARGETS).forEach(function (selector) {
                 var nodes = [];
                 Array.prototype.forEach.call(document.querySelectorAll(selector), function (el) {
                     var box = el.getBoundingClientRect();
@@ -252,15 +254,15 @@
                     nodes: nodes,
                     dir: dir,
                     T: T,
-                    b: 0.03 + 0.03 * i,
+                    b: compact ? 0.14 + 0.065 * i : 0.03 + 0.03 * i,
                     phase: i * 1.7,
                     u0: [BODY[0] + dir[0] * BODY_R * 0.55, BODY[1] + dir[1] * BODY_R * 0.55],
                     u1: [BODY[0] + dir[0] * (BODY_R + BLOT_R * 1.25), BODY[1] + dir[1] * (BODY_R + BLOT_R * 1.25)],
                     R1: Math.max(10, Math.min(20, Math.min.apply(null, nodes.map(function (n) { return n.ry; }))))
                 };
                 e.r = e.b + 0.11;
-                e.l = e.r + 0.38;
-                e.s = e.l + 0.10;
+                e.l = e.r + (compact ? 0.25 : 0.38);
+                e.s = e.l + (compact ? 0.08 : 0.10);
                 var release = bodyAt(e.r);
                 e.P = release.toScreen(e.u1);
                 // The released ink retains the body's velocity. Starting a
@@ -271,7 +273,7 @@
                 e.R0 = BLOT_R * release.scale;
                 var arc = bow(e.P, T);
                 var mid = [(e.P[0] + T[0]) / 2, (e.P[1] + T[1]) / 2];
-                var bend = Math.min(110, arc[2] * 0.22);
+                var bend = Math.min(compact ? 30 : 110, arc[2] * 0.22);
                 e.K = [mid[0] + arc[0] * bend, mid[1] + arc[1] * bend];
                 e.angle = Math.atan2(dir[1], dir[0]);
                 e.paths = nodes.map(function () {
@@ -295,7 +297,7 @@
                 }
                 e.cluster = clusters[clusters.length - 1];
             });
-            var quiet = document.querySelectorAll(QUIET);
+            var quiet = document.querySelectorAll(QUIET + (compact ? ', .logo > a' : ''));
             var portalFill = rgb(window.getComputedStyle(portal).backgroundColor);
             var lastLook = "";
 
@@ -476,6 +478,36 @@
             return { render: render, clear: clear };
         }
 
+        // Capability fallback: keep entrance movement when FluidInk is unavailable.
+        function buildCompactScene() {
+            var from = orb.getBoundingClientRect();
+            var to = dock.getBoundingClientRect();
+            var dx = to.left + to.width / 2 - from.left - from.width / 2;
+            var dy = to.top + to.height / 2 - from.top - from.height / 2;
+            var ratio = to.width / from.width;
+            var fill = rgb(window.getComputedStyle(portal).backgroundColor);
+            var nodes = [main, header, footer, document.querySelector('.reading-tools')].filter(Boolean);
+            orb.style.transformOrigin = '50% 50%';
+            return {
+                render: function (t) {
+                    var move = Math.min(1, t / 0.78);
+                    move = move * move * (3 - 2 * move);
+                    var reveal = Math.max(0, Math.min(1, (t - 0.35) / 0.65));
+                    reveal = reveal * reveal * (3 - 2 * reveal);
+                    orb.style.transform = 'translate(11.25%, -6%) translate(' + dx * move + 'px,' + dy * move + 'px) scale(' + mix(1, ratio, move) + ')';
+                    portal.style.backgroundColor = 'rgba(' + fill.slice(0, 3).join(',') + ',' + (1 - reveal) + ')';
+                    nodes.forEach(function (node) { node.style.opacity = String(reveal); });
+                },
+                clear: function () {
+                    orb.style.transform = '';
+                    orb.style.transformOrigin = '';
+                    portal.style.backgroundColor = '';
+                    nodes.forEach(function (node) { node.style.opacity = ''; });
+                    look(0, 0);
+                }
+            };
+        }
+
         function composePage(reverse) {
             if (entering) return;
             if (reverse) showPortal();
@@ -501,14 +533,15 @@
                 }
             }
             endScene = complete;
-            if (!wide.matches || !fine.matches || !window.FluidInk || !window.requestAnimationFrame) {
+            if (!window.requestAnimationFrame) {
                 complete(true);
                 return;
             }
 
             root.classList.add("fluid-composing");
-            scene = buildScene();
-            var duration = reverse ? RECALL : ENTER;
+            var compact = !wide.matches || !fine.matches || !window.FluidInk;
+            scene = window.FluidInk ? buildScene(compact) : buildCompactScene();
+            var duration = compact && window.FluidInk ? (reverse ? 1600 : 2000) : compact ? (reverse ? 650 : 850) : (reverse ? RECALL : ENTER);
             var start = null;
             function frame(now) {
                 if (start === null) start = now;

@@ -12,11 +12,9 @@
  * the fills are re-resolved mid-animation too.
  *
  * Layout is width-driven, interaction is capability-driven. Below 900px the
- * figure sits below the intro text; from 900px up it sits beside it. Only a
- * fine pointer that can hover, on a wide viewport,
- * gets a clickable figure — and that decision is made by fluid-ip.js, which
- * enables the button. CSS just follows the button's disabled state, so both
- * sides share one threshold.
+ * figure sits above the intro text, or beside it in short landscape windows;
+ * from 900px up it sits beside it. Click and touch are enabled by fluid-ip.js;
+ * dragging still requires a wide viewport and a fine pointer that can hover.
  */
 
 /* ---- The figure ------------------------------------------------------- */
@@ -148,6 +146,26 @@
     background: none;
     color: inherit;
     -webkit-tap-highlight-color: transparent;
+}
+
+/* The visible body occupies about 64% of the SVG's reserved width. */
+@media screen and (max-width: 899px) {
+    .fluid-ip-home-info {
+        min-height: 0;
+        gap: 12px;
+    }
+    .fluid-ip-home-info .fluid-ip-orb {
+        order: -1;
+        width: 172px;
+        margin: 0 auto;
+        transform: translateX(11.25%);
+    }
+}
+
+@media screen and (min-width: 480px) and (max-width: 899px) and (max-height: 500px) {
+    .fluid-ip-home-info { display: grid; grid-template-columns: minmax(0, 1fr) 142px; column-gap: 20px; }
+    .fluid-ip-home-info > :not(.fluid-ip-orb):not(.fluid-ip-dock) { grid-column: 1; }
+    .fluid-ip-home-info .fluid-ip-orb { grid-column: 2; grid-row: 1 / 4; width: 142px; align-self: center; }
 }
 
 /* The figure is two flat tones, so it must not be dimmed when the button is

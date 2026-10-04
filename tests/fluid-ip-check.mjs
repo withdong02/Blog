@@ -205,15 +205,17 @@ function check(name, ok, detail) {
     check("gate on: no animation before a click", h.pending() === 0);
 }
 
-for (const [name, options] of [
-    ["narrow viewport", { wide: false }],
-    ["coarse pointer", { fine: false }]
-]) {
+for (const options of [{ wide: false }, { fine: false }]) {
     const h = makeHarness(options);
     h.click();
-    check(`gate off (${name}): disabled, static label, click does nothing`,
-        h.orb.disabled === true && h.attrs["aria-label"] === "static" && h.pending() === 0,
-        `disabled=${h.orb.disabled} label=${h.attrs["aria-label"]} pending=${h.pending()}`);
+    check("compact click starts", !h.orb.disabled && h.pending() > 0);
+    h.runFor(3000);
+    check("compact forms become visible", h.forms.some(n => Number(n.attrs.opacity) > 0.5));
+    h.runFor(4000);
+    check("compact animation clears and stops", h.allCleared() && h.pending() === 0);
+    h.pointer("pointerdown", 200, 200);
+    h.pointer("pointermove", 500, 300, "window");
+    check("compact device does not start dragging", h.pending() === 0);
 }
 
 /* 2. A normal run ends clean: blots cleared, no frame left scheduled. */
@@ -297,8 +299,8 @@ for (const [name, options] of [
     h.click();
     h.runFor(400);
     h.media("(min-width: 900px)").set(false);
-    check("gate turning off mid-flight: stopped, cleared, disabled",
-        h.orb.disabled === true && h.allCleared() && h.pending() === 0,
+    check("gate turning off mid-flight: stopped, cleared, click remains enabled",
+        h.orb.disabled === false && h.allCleared() && h.pending() === 0,
         `disabled=${h.orb.disabled} pending=${h.pending()}`);
 }
 

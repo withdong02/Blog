@@ -12,10 +12,8 @@
  * Blot specs are data: every loop below iterates SPECS, so adding or removing
  * an blot is a one-line change here and nothing assumes three of them.
  *
- * Interaction is gated on exactly what fluid-ip.css gates on: at least 900px
- * wide, a fine pointer that can hover. Failing
- * either condition leaves the button disabled — not focusable, not clickable —
- * so the static figure never presents a control that does nothing.
+ * Click and touch share the same finite animation; compact devices use a
+ * shorter route. Dragging still requires a wide viewport and fine pointer.
  *
  * Frames run only while an animation is in flight: one rAF chain per click, no
  * idle rAF, and no second chain while one is playing. Every way out of the
@@ -103,6 +101,8 @@
         scene++;
     }
 
+    var runDuration = DURATION;
+    var compact = false;
     var total = DURATION + (SPECS.length - 1) * STAGGER;
     var raf = 0;
     var started = null;
@@ -189,9 +189,10 @@
 
         for (var i = 0; i < blots.length; i++) {
             var spec = SPECS[i];
-            var t = Math.max(0, Math.min(1, (elapsed - i * STAGGER) / DURATION));
+            var destination = compact ? [spec.to[0] - 35, spec.to[1] + (i === 0 ? 40 : i === 2 ? -35 : 0)] : spec.to;
+            var t = Math.max(0, Math.min(1, (elapsed - i * STAGGER) / runDuration));
             if (recalledAt !== null) {
-                t = Math.max(t, Math.min(1, 0.66 + Math.max(0, elapsed - recalledAt - i * STAGGER) / DURATION));
+                t = Math.max(t, Math.min(1, 0.66 + Math.max(0, elapsed - recalledAt - i * STAGGER) / runDuration));
             }
             if (t < 1) complete = false;
             /* Travel and transformation have separate beats: let the symbol
@@ -206,11 +207,11 @@
                 : t < 0.66 ? 1 : t < 0.80 ? 1 - ease((t - 0.66) / 0.14) : 0;
             var stretch = 1 + 0.2 * Math.sin(Math.PI * p) + 0.07 * Math.sin(phase * 1.2);
             var blotPhase = phase + i * 1.7;
-            var cx = spec.from[0] + (spec.to[0] - spec.from[0]) * p;
-            var cy = spec.from[1] + (spec.to[1] - spec.from[1]) * p - 25 * Math.sin(Math.PI * p);
+            var cx = spec.from[0] + (destination[0] - spec.from[0]) * p;
+            var cy = spec.from[1] + (destination[1] - spec.from[1]) * p - 25 * Math.sin(Math.PI * p);
             blots[i].setAttribute("d", blobPath(
                 cx, cy, size * (1 - formMix), blotPhase, stretch,
-                Math.atan2(spec.to[1] - spec.from[1], spec.to[0] - spec.from[0])
+                Math.atan2(destination[1] - spec.from[1], destination[0] - spec.from[0])
             ));
             forms[i].setAttribute("opacity", formMix.toFixed(3));
             softeners[i].setAttribute("stdDeviation", (9 * (1 - formMix)).toFixed(2));
@@ -230,27 +231,30 @@
 
     /* Single source of truth for "can this figure be clicked": keeps the
        disabled state, the accessible name and the running animation in step
-       when the viewport, the pointer or the motion preference changes. */
+       when the viewport or pointer changes. */
     function sync() {
-        var on = interactive();
+        var on = !!window.requestAnimationFrame;
         var atPortal = document.documentElement.classList.contains("fluid-portal-active");
-        if (!on || atPortal) stop();
+        stop();
         orb.disabled = !on && !atPortal;
         orb.setAttribute("aria-label", atPortal ? "进入文章列表" : on ? LABEL_ACTION : LABEL_STATIC);
     }
 
     orb.addEventListener("click", function () {
         if (document.documentElement.classList.contains("fluid-portal-active")) return;
-        if (!interactive()) return;
+        if (!window.requestAnimationFrame) return;
         if (dragSkipClick && Date.now() - dragSkipClick < 200) return;
         if (playing) {
             /* Only recall once all forms have settled. Their position and
                shape are identical across this skipped part of the hold. */
-            if (recalledAt === null && lastElapsed >= DURATION * 0.45 + (SPECS.length - 1) * STAGGER && lastElapsed < DURATION * 0.66) {
+            if (recalledAt === null && lastElapsed >= runDuration * 0.45 + (SPECS.length - 1) * STAGGER && lastElapsed < runDuration * 0.66) {
                 recalledAt = lastElapsed;
             }
             return;
         }
+        compact = !interactive();
+        runDuration = compact ? 5600 : DURATION;
+        total = runDuration + (SPECS.length - 1) * STAGGER;
         prepareForms();
         playing = true;
         lastElapsed = 0;
