@@ -43,7 +43,7 @@ params:
   analytics:
     google:
       SiteVerificationTag: "cSzMmRaz1N0azlkz9Kz9JYevONaGzayMLsgvKNh06Mo"
-  defaultTheme: light # dark, light, auto
+  defaultTheme: auto # dark, light, auto
   disableThemeToggle: false
 
   ShowReadingTime: true

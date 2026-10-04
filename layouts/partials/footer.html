@@ -141,6 +141,15 @@
 
 {{- if (not site.Params.disableThemeToggle) }}
 <script>
+    {{- if (and (ne site.Params.defaultTheme "light") (ne site.Params.defaultTheme "dark")) }}
+    const systemThemePreference = window.matchMedia('(prefers-color-scheme: dark)');
+    systemThemePreference.addEventListener('change', () => {
+        const savedTheme = localStorage.getItem('pref-theme');
+        if (savedTheme !== 'light' && savedTheme !== 'dark') {
+            document.documentElement.dataset.theme = systemThemePreference.matches ? 'dark' : 'light';
+        }
+    });
+    {{- end }}
     document.getElementById("theme-toggle").addEventListener("click", () => {
         const html = document.querySelector("html");
         function flip() {

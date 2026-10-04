@@ -56,7 +56,8 @@
 .outline-desktop { display: none; }
 .outline-wide .outline-desktop:not([hidden]) {
     display: block; position: fixed; top: 50%; transform: translateY(-50%);
-    right: max(46px, calc((100vw - var(--main-width)) / 2 - 278px)); z-index: 210;
+    /* Center the resting 12px tick on the 44px tool, then grow left on hover. */
+    right: max(40px, calc((100vw - var(--main-width)) / 2 - 284px)); z-index: 210;
 }
 .outline-rail-list {
     width: 40px; padding: 4px 0; max-height: 55dvh;
