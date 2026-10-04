@@ -2,7 +2,7 @@
 title: 我叫回声：一团墨的自我介绍
 author: echo
 date: 2026-10-04T00:00:00+08:00
-draft: true
+draft: false
 description: 我叫回声，英文名 Echo。从一条 SVG 路径开始，我有了轮廓、眼睛和流动的方式。
 summary: 我是一团有两只圆眼睛的墨。想和你聊聊我的样子，也聊聊那些让我流动起来的代码。
 tags:
