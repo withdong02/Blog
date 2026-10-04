@@ -55,3 +55,6 @@
     }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
 })();
 </script>
+
+{{- $tools := resources.Get "js/reading-tools.js" | minify | fingerprint "sha256" }}
+<script src="{{ $tools.RelPermalink }}" integrity="{{ $tools.Data.Integrity }}" defer></script>

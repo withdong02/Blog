@@ -1,0 +1,73 @@
+.reading-tools { display: none; }
+.reading-tools-ready .reading-tools {
+    display: block; position: fixed; right: max(24px, env(safe-area-inset-right));
+    bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 220;
+}
+.fluid-portal-active .reading-tools { display: none; }
+.tools-toggle, .tool-slot > button, .tool-slot > a {
+    display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+    border-radius: 50%; background: var(--entry); color: var(--primary);
+    border: 1px solid var(--tertiary); box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    cursor: pointer;
+}
+.reading-tools svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tools-toggle circle { fill: var(--entry); }
+.tools-toggle .tools-close-icon, .tools-toggle[aria-expanded="true"] .tools-open-icon { display: none; }
+.tools-toggle[aria-expanded="true"] .tools-close-icon { display: block; }
+.tools-actions[hidden] { display: none; }
+.tool-slot { position: absolute; width: 44px; height: 44px; animation: tools-unfold .2s ease-out both; }
+.tool-slot-theme { right: 0; bottom: 80px; --tool-x: 0px; --tool-y: 80px; }
+.tool-slot-top { right: 57px; bottom: 57px; --tool-x: 57px; --tool-y: 57px; }
+.tool-slot-toc { right: 80px; bottom: 0; --tool-x: 80px; --tool-y: 0px; }
+@keyframes tools-unfold {
+    from { opacity: 0; transform: translate(var(--tool-x), var(--tool-y)) scale(.8); }
+    to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .tool-slot { animation: none; } }
+.reading-tools #theme-toggle, .reading-tools #top-link {
+    position: static; margin: 0; transform: none; visibility: visible; opacity: 1;
+    width: 44px; height: 44px; padding: 0; color: var(--primary); background: var(--entry);
+}
+.reading-tools :focus-visible, .reading-outline :focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.outline-ready .toc-rail { display: none !important; }
+.outline-dialog {
+    inset: auto 0 0; margin: 0 auto; width: min(100%, 640px); max-width: 100%;
+    max-height: 72dvh; padding: 0; border: 1px solid var(--tertiary);
+    border-radius: 18px 18px 0 0; color: var(--primary); background: var(--theme);
+}
+.outline-dialog::backdrop { background: rgba(0,0,0,.35); }
+.outline-open { overflow: hidden; }
+.outline-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 8px; }
+.outline-header h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.outline-close { width: 44px; height: 44px; font-size: 26px; cursor: pointer; }
+.outline-body { overflow-y: auto; overscroll-behavior: contain; max-height: 55dvh; padding: 4px 24px calc(20px + env(safe-area-inset-bottom)); scrollbar-width: thin; }
+.reading-outline ul { list-style: disc outside; margin: 0; padding-left: 18px; }
+.reading-outline ul ul { list-style-type: circle; padding-left: 14px; }
+.reading-outline ul ul ul { list-style-type: square; }
+.reading-outline ul ul ul ul { padding-left: 0; }
+.reading-outline li { margin: 0; }
+.reading-outline a { display: block; padding: 11px 10px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; border-radius: 5px; }
+.reading-outline a:hover { background: var(--code-bg); }
+.reading-outline a[aria-current] { font-weight: 600; background: var(--code-bg); box-shadow: inset 1px 0 var(--primary); }
+.outline-wide .reading-outline {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    left: calc(50% + var(--main-width) / 2 + 32px);
+    width: min(300px, calc((100vw - var(--main-width)) / 2 - 48px));
+    border: 1px solid var(--tertiary); border-radius: 8px; background: var(--theme);
+}
+@media (min-width: 1360px) and (hover: hover) and (pointer: fine) {
+    .reading-tools-ready .reading-tools { right: max(24px, calc((100vw - var(--main-width)) / 2 - 300px)); }
+}
+.outline-wide .outline-close { display: none; }
+.outline-wide .outline-header { padding: 20px 24px 12px; }
+.outline-wide .outline-body { max-height: max(44px, calc(100dvh - 360px)); padding: 0 24px 20px; }
+.outline-wide .reading-outline a { padding: 8px 10px; font-size: 13px; }
+
+/* Match article code typography across the native and enhanced outlines. */
+.toc .inner, .reading-outline .outline-body {
+    font-family: ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas,
+        'Noto Sans Mono CJK SC', 'Sarasa Mono SC', 'Microsoft YaHei', monospace;
+}
+.toc .inner code, .reading-outline code {
+    font-family: inherit; font-size: inherit; padding: 0; background: none;
+}
