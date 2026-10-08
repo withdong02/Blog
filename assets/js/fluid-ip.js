@@ -42,7 +42,10 @@
     var SPECS = [
         { from: [365, 85], to: [610, -80], radius: 54,
             forms: [
-                { type: "path", value: "M0 -48 Q11 -11 48 0 Q11 11 0 48 Q-11 11 -48 0 Q-11 -11 0 -48 Z" },
+                { themes: {
+                    light: { type: "path", value: "M0 -24 A24 24 0 1 1 0 24 A24 24 0 1 1 0 -24 Z M-4 -48 H4 V-34 H-4 Z M-4 34 H4 V48 H-4 Z M-48 -4 H-34 V4 H-48 Z M34 -4 H48 V4 H34 Z M-37 -31 L-31 -37 L-21 -27 L-27 -21 Z M21 27 L27 21 L37 31 L31 37 Z M21 -27 L31 -37 L37 -31 L27 -21 Z M-37 31 L-27 21 L-21 27 L-31 37 Z" },
+                    dark: { type: "path", value: "M15 -46 C-39 -53 -63 10 -25 38 C6 62 43 34 44 10 C10 37 -24 0 15 -46 Z" }
+                } },
                 { type: "text", value: "读" },
                 { type: "path", value: "M-45 -35 Q-22 -42 0 -25 Q22 -42 45 -35 L45 35 Q22 28 0 45 Q-22 28 -45 35 Z M-34 -23 L-34 22 Q-17 21 -6 29 L-6 -15 Q-20 -25 -34 -23 Z M6 -15 L6 29 Q17 21 34 22 L34 -23 Q20 -25 6 -15 Z", rule: "evenodd" }
             ] },
@@ -84,10 +87,15 @@
         return blur;
     });
 
+    function formFor(spec) {
+        var form = spec.forms[scene % spec.forms.length];
+        return form.themes ? form.themes[document.documentElement.getAttribute("data-theme")] || form.themes.light : form;
+    }
+
     function prepareForms() {
         formLayer.replaceChildren();
         forms = SPECS.map(function (spec, i) {
-            var form = spec.forms[scene % spec.forms.length];
+            var form = formFor(spec);
             var node = document.createElementNS(SVG_NS, form.type);
             node.setAttribute("class", "fluid-ip-form" + (form.type === "text" ? " fluid-ip-form-text" : ""));
             if (form.type === "text") node.textContent = form.value;
@@ -112,6 +120,31 @@
 
     var wide = window.matchMedia("(min-width: 900px)");
     var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+    var pressStart = null;
+    function releasePress() {
+        pressStart = null;
+        orb.classList.remove("fluid-ip-pressed");
+    }
+    function press() {
+        if (orb.disabled || playing || document.documentElement.classList.contains("fluid-composing")) return;
+        orb.classList.add("fluid-ip-pressed");
+    }
+    orb.addEventListener("pointerdown", function (e) {
+        if (e.button !== 0 || e.isPrimary === false) return;
+        press();
+        pressStart = [e.clientX, e.clientY];
+    });
+    window.addEventListener("pointermove", function (e) {
+        if (pressStart && Math.hypot(e.clientX - pressStart[0], e.clientY - pressStart[1]) > 6) releasePress();
+    });
+    window.addEventListener("pointerup", releasePress);
+    window.addEventListener("pointercancel", releasePress);
+    window.addEventListener("blur", releasePress);
+    window.addEventListener("resize", releasePress);
+    window.addEventListener("pagehide", releasePress);
+    orb.addEventListener("blur", releasePress);
+    orb.addEventListener("keydown", function (e) { if (e.key === " " || e.key === "Enter") press(); });
+    window.addEventListener("keyup", releasePress);
 
     function ease(x) {
         return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(2 - 2 * x, 3) / 2;
@@ -127,7 +160,7 @@
        and turning the deformation axis a half turn leaves the surface exactly
        as it was. The blots keep the odd harmonics — that quiver is part of
        the confirmed baseline — because their axis never flips mid-flight. */
-    function blobPath(cx, cy, radius, phase, stretch, angle, symmetric) {
+    function blobPath(cx, cy, radius, phase, stretch, angle, symmetric, band) {
         if (radius < 0.1) return "";
         var cos = Math.cos(angle);
         var sin = Math.sin(angle);
@@ -144,6 +177,12 @@
                 cx + along * cos - across * sin,
                 cy + along * sin + across * cos
             ]);
+        }
+        if (band) {
+            var outline = window.FluidInk.blob(band.x, band.y, band.rx, band.ry, 0, phase, 4, 0.55, 8);
+            points = points.map(function (p, j) {
+                return [p[0] + (outline[j][0] - p[0]) * band.mix, p[1] + (outline[j][1] - p[1]) * band.mix];
+            });
         }
         function mid(from, to) {
             return ((from[0] + to[0]) / 2).toFixed(1) + " " + ((from[1] + to[1]) / 2).toFixed(1);
@@ -233,6 +272,7 @@
        disabled state, the accessible name and the running animation in step
        when the viewport or pointer changes. */
     function sync() {
+        releasePress();
         var on = !!window.requestAnimationFrame;
         var atPortal = document.documentElement.classList.contains("fluid-portal-active");
         stop();
@@ -263,7 +303,7 @@
     });
 
     document.addEventListener("visibilitychange", function () {
-        if (document.hidden) stop();
+        if (document.hidden) { releasePress(); stop(); }
     });
 
     [wide, fine].forEach(function (mq) {
@@ -320,7 +360,7 @@
     var deformX = 0, deformY = 0;
     var pullVX = 0, pullVY = 0;
     var bumpRaf = 0, bumpPrev = 0;
-    var dragStart = null, dragActive = false, dragSVG = null;
+    var dragStart = null, dragActive = false, dragSVG = null, dragPointer = null;
     var dragWindow = [0, 0], dragMove = 0, dragTime = 0, frameMove = 0;
     /* Frame clock of the last frame that measured movement. Everything that
        ages with time — the idle decay below, the relaxation after release —
@@ -448,7 +488,7 @@
        the small region around the body, so the blob vanished beyond that box
        and reappeared inside it (2026-09-30). */
     function gooNeeded() {
-        return !!(dragStart || dragSVG || dragActive)
+        return !!(dragStart || dragSVG || dragActive || dropMix || dropPending || dropReturning)
             || Math.sqrt(Math.pow(bx - BCX, 2) + Math.pow(by - BCY, 2)) > BR * 0.75;
     }
 
@@ -464,12 +504,15 @@
     }
 
     function bumpStep(now) {
+        if (!orb.isConnected) { stopPull(); return; }
         var k = frameTicks(now);
         if (playing) {
             /* The click scene takes the whole figure over: drop this pull
                entirely, deformation included, or the next one starts from a
                blob that was left mid-stretch. Landing it on the body first is
                also what lets the region go back. */
+            clearDrop();
+            dragStart = null; dragActive = false; dragSVG = null; dragPointer = null;
             bumpEl.setAttribute("d", "");
             bx = BCX; by = BCY; bvx = 0; bvy = 0;
             bumpStretch = 1; bumpAngle = 0; bumpPhase = 0; pointerSpeed = 0;
@@ -479,7 +522,20 @@
             return;
         }
 
-        var target = dragActive && dragSVG ? dragSVG : [BCX, BCY];
+        updateDrop(k);
+        if (dropPending && dropLink === dropPending && dropMix === 1) {
+            var destination = dropPending;
+            stopPull();
+            destination.click();
+            return;
+        }
+        if (dropReturning && dropMix === 0) {
+            dropReturning = false;
+            finishPull();
+            if (!bumpRaf) return;
+        }
+
+        var target = (dragActive || dropPending || dropReturning) && dragSVG ? dragSVG : [BCX, BCY];
         var dx = target[0] - bx, dy = target[1] - by;
         /* Semi-implicit Euler with k sub-steps: a 120Hz frame integrates the
            same spring twice as finely instead of pushing it twice as hard,
@@ -563,7 +619,7 @@
            advancing read as the blob spinning in place. */
         bumpPhase += Math.min(0.35, move / 260) * k;
 
-        if (dist < BR * 0.75 && !dragActive) {
+        if (dist < BR * 0.75 && !dragActive && !dropMix && !dropPending && !dropReturning) {
             /* The blob is back inside the body: erase it, but keep stepping
                until it has also stopped moving and the deformation has fully
                relaxed — otherwise the loop stops with the stretch stuck where
@@ -585,7 +641,9 @@
                surface deforms with the drag — centrally symmetric, so nothing
                about it reads as a front or a back. */
             bumpEl.setAttribute("d", blobPath(bx, by, BUMP_R, bumpPhase,
-                bumpStretch, bumpAngle, true));
+                bumpStretch, bumpAngle, true, dropBand && dropMix ? {
+                    x: dropBand.x, y: dropBand.y, rx: dropBand.rx, ry: dropBand.ry, mix: ease(dropMix)
+                } : null));
         }
         bumpRaf = window.requestAnimationFrame(bumpStep);
     }
@@ -597,9 +655,52 @@
         }
     }
 
+    var navigationLinks = window.FluidInk ? Array.from(document.querySelectorAll("#menu a[href]")).filter(function (link) {
+        return link.origin === window.location.origin;
+    }) : [];
+    var dropTarget = null, dropLink = null, dropBand = null, dropMix = 0;
+    var dropPending = null, dropReturning = false;
+    function clearDrop() {
+        dropTarget = null; dropLink = null; dropBand = null; dropMix = 0;
+        dropPending = null; dropReturning = false;
+        document.documentElement.classList.remove("fluid-drop-active");
+        navigationLinks.forEach(function (link) {
+            link.classList.remove("fluid-drop-selected");
+            link.style.removeProperty("--fluid-drop-contrast");
+        });
+    }
+    function updateDrop(k) {
+        if (!dropMix && dropTarget && dropLink !== dropTarget) {
+            dropLink = dropTarget;
+            var r = window.FluidInk.inkRect(dropLink);
+            var centre = toSVG((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+            var scale = svgScale();
+            if (!centre) { clearDrop(); return; }
+            dropBand = { x: centre[0], y: centre[1], rx: (r.width / 2 + 15) / scale, ry: (r.height / 2 + 9) / scale };
+        }
+        dropMix = Math.max(0, Math.min(1, dropMix + (dropTarget && dropLink === dropTarget ? 1 : -1) * k * 16.7 / 700));
+        navigationLinks.forEach(function (link) {
+            var selected = link === dropLink && dropMix > 0;
+            link.classList.toggle("fluid-drop-selected", selected);
+            if (selected) link.style.setProperty("--fluid-drop-contrast", (100 * Math.max(0, Math.min(1, (ease(dropMix) - 0.5) / 0.3))).toFixed(1) + "%");
+            else link.style.removeProperty("--fluid-drop-contrast");
+        });
+    }
+    function dropAt(x, y) {
+        var closest = null, distance = Infinity;
+        navigationLinks.forEach(function (link) {
+            var r = link.getBoundingClientRect();
+            if (!r.width || !r.height || x < r.left - 10 || x > r.right + 10 || y < r.top - 10 || y > r.bottom + 10) return;
+            var d = Math.pow(x - (r.left + r.right) / 2, 2) + Math.pow(y - (r.top + r.bottom) / 2, 2);
+            if (d < distance) { distance = d; closest = link; }
+        });
+        return closest;
+    }
+
     function stopPull() {
+        clearDrop();
         dragSVG = null;
-        dragStart = null; dragActive = false;
+        dragStart = null; dragActive = false; dragPointer = null;
         dragWindow[0] = 0; dragWindow[1] = 0;
         dragMove = 0; frameMove = 0;
         pullVX = 0; pullVY = 0;
@@ -641,7 +742,7 @@
     }
 
     window.addEventListener("pointermove", function (e) {
-        if (!interactive() || !dragStart) return;
+        if (!interactive() || !dragStart || e.pointerId !== dragPointer) return;
         var sx = e.clientX, sy = e.clientY;
         if (!dragActive) {
             var ddx = sx - dragStart[0], ddy = sy - dragStart[1];
@@ -652,7 +753,9 @@
             dragMove = 0; frameMove = 0;
             pullVX = 0; pullVY = 0;
             pinGoo();
+            if (navigationLinks.length) document.documentElement.classList.add("fluid-drop-active");
         }
+        dropTarget = dropAt(sx, sy);
         var p = toSVG(sx, sy);
         if (!p) return;
         /* Accumulate first, then close the window: a move that arrives after a
@@ -671,9 +774,10 @@
     });
 
     orb.addEventListener("pointerdown", function (e) {
-        if (!interactive() || playing || e.button !== 0) return;
+        if (!interactive() || playing || dragStart || dropPending || dropReturning || e.button !== 0 || e.pointerType === "touch" || e.isPrimary === false || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
         if (document.documentElement.classList.contains("fluid-portal-active")) return;
         dragStart = [e.clientX, e.clientY];
+        dragPointer = e.pointerId;
         dragActive = false;
     });
 
@@ -681,18 +785,37 @@
        taking the pointer away mid-gesture (pointercancel) alike: without the
        second one a cancelled drag left `dragStart` set and the blob following
        the pointer with no button down. */
-    function endPull() {
-        if (!dragStart) return;
+    function endPull(e) {
+        if (!dragStart || e.pointerId !== dragPointer || (e.type === "pointerup" && e.button !== 0)) return;
         var wasDrag = dragActive;
+        var target = wasDrag && e && e.type === "pointerup" && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey
+            ? dropAt(e.clientX, e.clientY) : null;
         dragStart = null;
+        dragPointer = null;
         dragActive = false;
 
         if (!wasDrag) { dragSVG = null; return; }
         dragSkipClick = Date.now();
+        if (target) {
+            dropPending = target;
+            dropTarget = target;
+            ensureBump();
+            return;
+        }
         /* Measure the last, unfinished window: a flick can be shorter than one
            window and would otherwise register as no movement at all. */
         flushPull();
+        dropTarget = null;
+        if (dropMix) {
+            dropReturning = true;
+            ensureBump();
+            return;
+        }
+        finishPull();
+    }
 
+    function finishPull() {
+        clearDrop();
         var dx = bx - BCX, dy = by - BCY;
         var dist = Math.sqrt(dx * dx + dy * dy);
         var threshold = 140 / svgScale();
@@ -730,7 +853,7 @@
 
         var idx = scene % SPECS.length;
         var spec = SPECS[idx];
-        var formDef = spec.forms[scene % spec.forms.length];
+        var formDef = formFor(spec);
         scene++;
 
         var blotP = document.createElementNS(SVG_NS, "path");
@@ -809,6 +932,9 @@
     document.addEventListener("visibilitychange", function () {
         if (document.hidden) stopPull();
     });
+    window.addEventListener("pagehide", function () { stop(); stopPull(); });
+    window.addEventListener("resize", stopPull);
+    window.addEventListener("fluid-portal-change", stopPull);
 
     /* Read-only view of the pull, for tests/fluid-ip-check.mjs: the
        deformation axis and the filter region are the two things that cannot be
@@ -820,6 +946,9 @@
                 stretch: bumpStretch,
                 angle: bumpAngle,
                 pulled: !!(dragActive && dragSVG),
+                dropMix: dropMix,
+                dropPending: !!dropPending,
+                dropReturning: dropReturning,
                 /* A break hands the pull off to the blot animation and resets
                    the blob, which reads exactly like a frozen pull unless the
                    check can tell them apart. */

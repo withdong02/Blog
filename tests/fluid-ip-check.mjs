@@ -22,11 +22,29 @@ import vm from "node:vm";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const source = readFileSync(join(here, "..", "assets", "js", "fluid-ip.js"), "utf8");
+const inkSource = readFileSync(join(here, "..", "assets", "js", "fluid-ink.js"), "utf8");
 
 const TOTAL = 9000 + 2 * 320; /* DURATION + (blots - 1) * STAGGER */
 
 function makeHarness(options = {}) {
-    const opts = Object.assign({ wide: true, fine: true, reduced: false, withOrb: true }, options);
+    const opts = Object.assign({ wide: true, fine: true, reduced: false, withOrb: true, theme: "light", withNavigation: false, withInk: true }, options);
+    function classes() {
+        return {
+            values: new Set(),
+            add(name) { this.values.add(name); },
+            remove(name) { this.values.delete(name); },
+            contains(name) { return this.values.has(name); },
+            toggle(name, on) { if (on) this.add(name); else this.remove(name); }
+        };
+    }
+    const root = { classList: classes(), getAttribute: () => opts.theme };
+    const links = opts.withNavigation ? [1100, 1170, 1240].map((left, i) => ({
+        origin: i === 2 ? "https://external.example" : "http://localhost:1314",
+        classList: classes(), clicks: 0,
+        style: { props: {}, setProperty(k, v) { this.props[k] = v; }, removeProperty(k) { delete this.props[k]; } },
+        getBoundingClientRect: () => ({ left, right: left + 60, top: 0, bottom: 60, width: 60, height: 60 }),
+        click() { this.clicks++; }
+    })) : [];
 
     const media = new Map();
     function mediaQuery(query) {
@@ -69,6 +87,12 @@ function makeHarness(options = {}) {
         querySelector: (s) => (s === "#fluid-ip-goo" ? gooFilter : null)
     };
     const orb = {
+        classList: {
+            values: new Set(),
+            add(name) { this.values.add(name); },
+            remove(name) { this.values.delete(name); },
+            contains(name) { return this.values.has(name); }
+        },
         disabled: true,
         isConnected: true,
         querySelector: (selector) => (selector === ".fluid-ip-blots" ? blotLayer
@@ -83,7 +107,17 @@ function makeHarness(options = {}) {
 
     const document = {
         hidden: false,
-        documentElement: { classList: { contains: () => false } },
+        documentElement: root,
+        querySelectorAll: () => links,
+        createRange: () => ({
+            selectNodeContents(node) { this.link = node.parentNode; },
+            getClientRects() { const r = this.link.getBoundingClientRect(); return [{ ...r, top: 20, bottom: 40, height: 20 }]; }
+        }),
+        createTreeWalker: (link) => {
+            let read = false;
+            link.closest = () => null;
+            return { nextNode() { if (read) return null; read = true; return { nodeType: 3, nodeValue: "nav", parentNode: link }; } };
+        },
         getElementById: (id) => (opts.withOrb && id === "fluid-ip-orb" ? orb : null),
         createElementNS(_ns, tag) {
             return {
@@ -99,6 +133,7 @@ function makeHarness(options = {}) {
     };
 
     const window = {
+        location: { origin: "http://localhost:1314" },
         innerWidth: 1440,
         innerHeight: 900,
         matchMedia: mediaQuery,
@@ -116,12 +151,12 @@ function makeHarness(options = {}) {
     };
 
     /* One queued frame, in scheduling order, at a 16.7ms step. */
-    function step() {
+    function step(dt = 16.7) {
         const first = queued.entries().next();
         if (first.done) return false;
         queued.delete(first.value[0]);
-        clock += 16.7;
-        clock_.advance(16.7);
+        clock += dt;
+        clock_.advance(dt);
         framesRun++;
         first.value[1](clock);
         return true;
@@ -142,9 +177,9 @@ function makeHarness(options = {}) {
     /* The screen-to-SVG transform is a 0.6 scale at (100, 100), so a screen
        position is also a usable SVG position at 5/3 its size: 60px right of
        the pointer is +100 user units, which is a comfortable pull. */
-    function pointer(type, x, y, target) {
+    function pointer(type, x, y, target, extra = {}) {
         const handlers = target === "orb" ? orbHandlers[type] : winHandlers[type];
-        (handlers || []).forEach((fn) => fn({ type, clientX: x, clientY: y, button: 0 }));
+        (handlers || []).forEach((fn) => fn({ type, clientX: x, clientY: y, button: 0, ...extra }));
     }
 
     /* A drag in equal steps, so velocity and direction are steady. The pointer
@@ -172,14 +207,19 @@ function makeHarness(options = {}) {
         }
     }
 
-    vm.runInContext(source, vm.createContext({ window, document, performance: clock_ }),
+    const context = vm.createContext({ window, document, performance: clock_, NodeFilter: { SHOW_ELEMENT: 1, SHOW_TEXT: 4 } });
+    if (opts.withInk) vm.runInContext(inkSource, context);
+    vm.runInContext(source, context,
         { filename: "fluid-ip.js" });
 
     return {
-        orb, attrs, blots, forms, media: mediaQuery, document, gooAttrs, window,
+        orb, attrs, blots, forms, media: mediaQuery, document, gooAttrs, window, root, links,
+        theme: (value) => { opts.theme = value; },
         click: () => fire("click", "orb"),
         hide: () => { document.hidden = true; fire("visibilitychange", "document"); },
         step, runFor, pointer, drag, steer,
+        key: (type, key) => (orbHandlers[type] || []).forEach((fn) => fn({ key })),
+        windowEvent: (type) => fire(type, "window"),
         release: () => pointer("pointerup", 0, 0, "window"),
         state: () => window.FluidIpPull.state(),
         pending: () => queued.size,
@@ -197,6 +237,26 @@ function check(name, ok, detail) {
 }
 
 /* 1. The gate: wide viewport, fine hovering pointer, motion allowed. */
+{
+    const h = makeHarness({ wide: false, fine: false });
+    h.pointer("pointerdown", 100, 100, "orb");
+    check("touch press gives immediate feedback without scheduling frames", h.orb.classList.contains("fluid-ip-pressed") && h.pending() === 0);
+    h.pointer("pointermove", 110, 100, "window");
+    check("moving beyond the click threshold hands off pressure", !h.orb.classList.contains("fluid-ip-pressed"));
+    h.key("keydown", " ");
+    check("keyboard press has the same feedback", h.orb.classList.contains("fluid-ip-pressed"));
+    h.windowEvent("keyup");
+    check("keyboard release clears feedback", !h.orb.classList.contains("fluid-ip-pressed"));
+    for (const event of ["pointercancel", "blur", "resize", "pagehide", "fluid-portal-change"]) {
+        h.pointer("pointerdown", 100, 100, "orb");
+        h.windowEvent(event);
+        check(`${event} clears pressure`, !h.orb.classList.contains("fluid-ip-pressed"));
+    }
+    h.pointer("pointerdown", 100, 100, "orb");
+    h.hide();
+    check("hidden page clears pressure", !h.orb.classList.contains("fluid-ip-pressed"));
+}
+
 {
     const h = makeHarness();
     check("gate on: button enabled with the action label",
@@ -669,6 +729,144 @@ for (const options of [{ wide: false }, { fine: false }]) {
     check("system reduced motion still allows the animation", !h.orb.disabled && h.pending() > 0);
     h.runFor(12000);
     check("system reduced motion animation stops cleanly", h.pending() === 0);
+}
+
+/* Theme chooses the shape once; colours remain a CSS concern. */
+for (const theme of ["light", "dark"]) {
+    const h = makeHarness({ theme });
+    h.click();
+    const shape = h.forms[0].d;
+    check(`${theme}: first click chooses ${theme === "light" ? "sun" : "moon"}`, shape.startsWith(theme === "light" ? "M0 -24" : "M15 -46"));
+    h.theme(theme === "light" ? "dark" : "light");
+    h.runFor(5000);
+    check("in-flight theme change preserves the launched shape", h.forms[0].d === shape);
+    h.runFor(TOTAL);
+    h.click(); h.runFor(TOTAL + 100);
+    h.click(); h.runFor(TOTAL + 100);
+    h.click();
+    check("next contextual story reads the new theme", h.forms[0].d !== shape);
+    const b = makeHarness({ theme });
+    b.drag(400, 400, 900, 900, 16, 2); b.release();
+    check("break-off uses the same contextual shape", b.forms.at(-1).d === shape);
+}
+
+/* The pointer owns the drop, even before its spring has caught up. */
+{
+    const h = makeHarness({ withNavigation: true });
+    h.drag(400, 400, 1130, 30, 1, 0);
+    check("drag reveals destinations and selects the hit", h.root.classList.contains("fluid-drop-active") && h.links[0].classList.contains("fluid-drop-selected"));
+    h.pointer("pointerup", 1168, 30, "window");
+    h.pointer("pointerup", 1168, 30, "window");
+    check("release waits for the rest of the absorption", h.links.every(l => l.clicks === 0) && h.pending() === 1);
+    h.runFor(1700);
+    check("overlap chooses nearest centre and activates once", h.links[0].clicks === 0 && h.links[1].clicks === 1);
+    check("navigation clears hint, selection, paths, frames and filter", !h.root.classList.contains("fluid-drop-active") && h.links.every(l => !l.classList.contains("fluid-drop-selected")) && h.pending() === 0 && h.allCleared() && h.state().bounds === null && h.gooAttrs.x === "-165");
+}
+for (const ending of ["miss", "external", "cancel", "modified"]) {
+    const h = makeHarness({ withNavigation: true });
+    h.drag(400, 400, 1130, 30, 10, 0);
+    h.pointer(ending === "cancel" ? "pointercancel" : "pointerup", ending === "external" ? 1270 : ending === "miss" ? 1000 : 1130, 30, "window", { ctrlKey: ending === "modified" });
+    check(`${ending} never navigates`, h.links.every(l => l.clicks === 0));
+    h.runFor(12000);
+    check(`${ending} still completes the ordinary ink return and clears highlight`, h.pending() === 0 && h.state().bounds === null && h.links.every(l => !l.classList.contains("fluid-drop-selected")) && !h.root.classList.contains("fluid-drop-active"));
+}
+for (const extra of [{ pointerType: "touch" }, { ctrlKey: true }, { isPrimary: false }]) {
+    const h = makeHarness({ withNavigation: true });
+    h.pointer("pointerdown", 400, 400, "orb", extra);
+    h.pointer("pointermove", 1130, 30, "window");
+    h.pointer("pointerup", 1130, 30, "window");
+    check("touch, modified and secondary pointers do not start navigation", h.links.every(l => l.clicks === 0) && !h.root.classList.contains("fluid-drop-active") && h.pending() === 0);
+}
+for (const ending of ["resize", "pagehide", "fluid-portal-change", "hidden", "gate", "click"]) {
+    const h = makeHarness({ withNavigation: true });
+    h.drag(400, 400, 1130, 30, 10, 0);
+    if (ending === "hidden") h.hide();
+    else if (ending === "gate") h.media("(min-width: 900px)").set(false);
+    else if (ending === "click") { h.click(); h.step(); h.step(); }
+    else h.windowEvent(ending);
+    check(`${ending} interrupts drop state`, !h.root.classList.contains("fluid-drop-active") && h.links.every(l => !l.classList.contains("fluid-drop-selected")) && h.state().bounds === null && !h.state().pulled);
+    h.pointer("pointerup", 1130, 30, "window");
+    check(`${ending} leaves no delayed navigation`, h.links.every(l => l.clicks === 0));
+}
+
+/* One continuous contour, both directions, with no CSS rectangle under it. */
+{
+    const h = makeHarness({ withNavigation: true });
+    h.pointer("pointerdown", 400, 400, "orb", { pointerId: 1 });
+    h.pointer("pointermove", 1130, 30, "window", { pointerId: 1 });
+    h.step(); h.runFor(800);
+    h.pointer("pointermove", 1200, 30, "window", { pointerId: 2, pointerType: "touch" });
+    h.pointer("pointerup", 1200, 30, "window", { pointerId: 2, pointerType: "touch" });
+    h.pointer("pointerdown", 400, 400, "orb", { pointerId: 3, pointerType: "pen" });
+    h.pointer("pointermove", 1200, 30, "window", { pointerId: 3, pointerType: "pen" });
+    h.pointer("pointerup", 1200, 30, "window", { pointerId: 3, pointerType: "pen" });
+    h.runFor(800);
+    check("another pointer cannot move or release the active drag", h.state().pulled && h.links.every(l => l.clicks === 0) && h.links[0].classList.contains("fluid-drop-selected"));
+    h.pointer("pointerup", 1130, 30, "window", { pointerId: 1, button: 2 });
+    h.runFor(800);
+    check("releasing another mouse button does not finish the left drag", h.state().pulled && h.links.every(l => l.clicks === 0));
+    h.pointer("pointerup", 1130, 30, "window", { pointerId: 1 });
+    h.runFor(800);
+    check("only the original left pointer activates the destination", h.links[0].clicks === 1 && h.links[1].clicks === 0 && h.pending() === 0);
+}
+{
+    const h = makeHarness({ withNavigation: true });
+    h.drag(400, 400, 1130, 30, 1, 0);
+    h.runFor(300);
+    const partial = h.state().dropMix;
+    const middlePath = h.blots[3].d;
+    check("absorption has an intermediate contour", partial > 0.35 && partial < 0.6 && h.pending() === 1);
+    h.runFor(450);
+    const finalPath = h.blots[3].d;
+    const xy = finalPath.match(/[-\d.]+/g).map(Number);
+    const y = xy.filter((_, i) => i % 2 === 1);
+    check("settled band hugs the inked text, not the full link height", h.state().dropMix === 1 && finalPath !== middlePath && (Math.max(...y) - Math.min(...y)) * 0.6 < 45);
+    h.pointer("pointermove", 1000, 200, "window");
+    check("leaving never resets the contour instantly", h.state().dropMix === 1 && h.blots[3].d === finalPath);
+    h.runFor(300);
+    const reversed = h.state().dropMix;
+    check("exit dissolves gradually with the original clock", reversed > 0.35 && reversed < 0.6 && h.blots[3].d !== finalPath && h.pending() === 1);
+    h.pointer("pointermove", 1130, 30, "window");
+    h.step();
+    check("re-entry reverses from the current progress", h.state().dropMix > reversed && h.state().dropMix < reversed + 0.04);
+    h.runFor(800);
+    h.pointer("pointermove", 1200, 30, "window");
+    h.runFor(300);
+    check("crossing first withdraws from the old destination", h.links[0].classList.contains("fluid-drop-selected") && !h.links[1].classList.contains("fluid-drop-selected"));
+    h.runFor(1200);
+    check("crossing settles at the new destination", h.state().dropMix === 1 && !h.links[0].classList.contains("fluid-drop-selected") && h.links[1].classList.contains("fluid-drop-selected"));
+    h.pointer("pointerup", 1000, 200, "window");
+    check("release outside a settled band runs a finite separation", h.state().dropReturning && !h.state().dropPending && h.pending() === 1);
+    h.runFor(12000);
+    check("separation clears ink colours and returns the filter", h.links.every(l => l.clicks === 0 && Object.keys(l.style.props).length === 0) && h.state().dropMix === 0 && h.state().bounds === null && h.pending() === 0);
+}
+{
+    const progress = [];
+    for (const dt of [16.7, 8.35]) {
+        const h = makeHarness({ withNavigation: true });
+        h.drag(400, 400, 1130, 30, 1, 0);
+        for (let elapsed = 0; elapsed < 334 - 0.01; elapsed += dt) h.step(dt);
+        progress.push(h.state().dropMix);
+    }
+    check("60Hz and 120Hz share the same morph duration", Math.abs(progress[0] - progress[1]) < 0.001);
+}
+for (const ending of ["resize", "pagehide", "fluid-portal-change", "hidden", "gate", "removed"]) {
+    const h = makeHarness({ withNavigation: true });
+    h.drag(400, 400, 1130, 30, 1, 0);
+    h.pointer("pointerup", 1130, 30, "window");
+    h.runFor(200);
+    check("early release schedules the remaining absorption once", h.state().dropPending && h.pending() === 1 && h.links.every(l => l.clicks === 0));
+    if (ending === "hidden") h.hide();
+    else if (ending === "gate") h.media("(min-width: 900px)").set(false);
+    else if (ending === "removed") h.orb.isConnected = false;
+    else h.windowEvent(ending);
+    h.runFor(2000);
+    check(`${ending} cancels pending navigation and inline contrast`, !h.state().dropPending && h.links.every(l => l.clicks === 0 && Object.keys(l.style.props).length === 0) && h.pending() === 0);
+}
+{
+    const h = makeHarness({ withNavigation: true, withInk: false });
+    h.drag(400, 400, 1130, 30, 1, 0); h.release(); h.runFor(12000);
+    check("missing ink primitives keeps ordinary drag without navigation", h.links.every(l => l.clicks === 0) && h.pending() === 0 && !h.root.classList.contains("fluid-drop-active"));
 }
 
 console.log(failures === 0 ? "\nall checks passed" : `\n${failures} check(s) failed`);

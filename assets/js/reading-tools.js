@@ -11,12 +11,14 @@
     document.body.appendChild(tools);
     var toggle = tools.querySelector("button");
     var actions = tools.querySelector(".tools-actions");
+    var animateMenu, resetMenu;
     function expand(on) {
         if (!on && actions.contains(document.activeElement)) toggle.focus({ preventScroll: true });
         actions.inert = !on;
         actions.classList.toggle("is-open", on);
         root.classList.toggle("reading-tools-open", on);
         toggle.setAttribute("aria-expanded", String(on));
+        if (animateMenu) animateMenu(on);
     }
     function add(control, label, slot) {
         if (!control) return;
@@ -38,7 +40,7 @@
     document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") { expand(false); toggle.focus(); }
     });
-    window.addEventListener("fluid-portal-change", function () { expand(false); });
+    window.addEventListener("fluid-portal-change", function () { expand(false); if (resetMenu) resetMenu(); });
 
     if (source && source.querySelector("a[href^='#']")) {
         var button = document.createElement("button");
@@ -51,7 +53,7 @@
         panel.className = "reading-outline";
         panel.setAttribute("aria-label", "文章目录");
         panel.tabIndex = -1;
-        panel.innerHTML = '<div class="outline-header"><h2>文章目录</h2><button class="outline-close" aria-label="关闭目录">×</button></div><div class="outline-body"></div>';
+        panel.innerHTML = '<button class="outline-handle" aria-label="拖动收起目录" type="button"><span></span></button><div class="outline-header"><h2>文章目录</h2><button class="outline-close" aria-label="关闭目录">×</button></div><div class="outline-body"></div>';
         panel.querySelector(".outline-body").appendChild(source.cloneNode(true));
         var dialog = document.createElement("dialog");
         dialog.className = "outline-dialog";
@@ -171,10 +173,72 @@
             if (row.top < box.top) body.scrollTop += row.top - box.top;
             else if (row.bottom > box.bottom) body.scrollTop += row.bottom - box.bottom;
         }
+        var handle = panel.querySelector(".outline-handle");
+        var pull = null, sheetAnimation = null, sheetDragged = false;
+        function resetSheet() {
+            if (sheetAnimation) sheetAnimation.cancel();
+            sheetAnimation = null;
+            var pointer = pull && pull.id;
+            pull = null;
+            if (pointer !== null && handle.hasPointerCapture(pointer)) handle.releasePointerCapture(pointer);
+            dialog.style.transform = "";
+            dialog.classList.remove("is-dragging");
+        }
+        function settleSheet(from, dismiss) {
+            resetSheet();
+            if (!dialog.animate) { if (dismiss) close(); return; }
+            var end = dismiss ? dialog.getBoundingClientRect().height + 24 : 0;
+            var animation = dialog.animate([
+                { transform: "translateY(" + from + "px)" },
+                { transform: "translateY(" + end + "px)" }
+            ], { duration: dismiss ? 180 : 260, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
+            sheetAnimation = animation;
+            animation.onfinish = function () {
+                if (sheetAnimation !== animation) return;
+                if (dismiss) close();
+                else resetSheet();
+            };
+        }
+        handle.addEventListener("pointerdown", function (e) {
+            if (!dialog.open || wide.matches || e.button !== 0 || e.isPrimary === false || pull) return;
+            var from = dialog.getBoundingClientRect().top;
+            resetSheet();
+            // A new gesture takes over the visible position of the settling sheet.
+            var offset = from - dialog.getBoundingClientRect().top;
+            sheetDragged = false;
+            pull = { id: e.pointerId, start: e.clientY - (offset < 0 ? offset / .18 : offset), last: e.clientY, time: e.timeStamp, velocity: 0, offset: offset };
+            handle.setPointerCapture(e.pointerId);
+            dialog.classList.add("is-dragging");
+            dialog.style.transform = "translateY(" + offset + "px)";
+        });
+        handle.addEventListener("pointermove", function (e) {
+            if (!pull || pull.id !== e.pointerId) return;
+            var elapsed = e.timeStamp - pull.time;
+            if (elapsed > 0) pull.velocity = (e.clientY - pull.last) / elapsed;
+            pull.last = e.clientY; pull.time = e.timeStamp;
+            var distance = e.clientY - pull.start;
+            if (Math.abs(distance) > 6) sheetDragged = true;
+            pull.offset = distance < 0 ? distance * .18 : distance;
+            dialog.style.transform = "translateY(" + pull.offset + "px)";
+        });
+        handle.addEventListener("pointerup", function (e) {
+            if (!pull || pull.id !== e.pointerId) return;
+            var dismiss = pull.offset > Math.min(120, dialog.getBoundingClientRect().height * .25)
+                || (pull.offset > 24 && e.timeStamp - pull.time < 80 && pull.velocity > .6);
+            settleSheet(pull.offset, dismiss);
+        });
+        handle.addEventListener("pointercancel", resetSheet);
+        handle.addEventListener("lostpointercapture", function () { if (pull) resetSheet(); });
+        handle.addEventListener("click", function (e) {
+            if (sheetDragged && e.detail !== 0) { sheetDragged = false; return; }
+            close();
+        });
         function close() {
+            resetSheet();
             if (dialog.open) dialog.close();
         }
         dialog.addEventListener("close", function () {
+            resetSheet();
             root.classList.remove("outline-open");
             toggle.focus({ preventScroll: true });
         });
@@ -185,6 +249,7 @@
             track();
             hidePreview();
             dialog.showModal(); root.classList.add("outline-open"); reveal();
+            if (!wide.matches) settleSheet(24, false);
         });
         function layout() {
             close();
@@ -195,6 +260,9 @@
             hidePreview();
         }
         wide.addEventListener("change", layout);
+        window.addEventListener("resize", resetSheet);
+        window.addEventListener("pagehide", close);
+        document.addEventListener("visibilitychange", function () { if (document.hidden) close(); });
         var frame = 0;
         window.addEventListener("scroll", function () {
             if (!frame) frame = requestAnimationFrame(function () { frame = 0; track(); });
@@ -209,6 +277,80 @@
         slot.style.setProperty("--tool-x", "0px");
         slot.style.setProperty("--tool-y", (60 * (i + 1)) + "px");
     });
+    var ink = window.FluidInk;
+    if (ink && window.requestAnimationFrame && slots.length) {
+        var svg = document.createElementNS(ink.SVG_NS, "svg");
+        var height = slots.length * 60;
+        svg.setAttribute("class", "tools-ink");
+        svg.setAttribute("aria-hidden", "true");
+        svg.setAttribute("focusable", "false");
+        svg.setAttribute("viewBox", "-12 " + (-height - 12) + " 68 " + (height + 68));
+        svg.style.height = height + 68 + "px";
+        svg.innerHTML = '<defs><filter id="tools-ink-goo" x="-12" y="' + (-height - 12) + '" width="68" height="' + (height + 68) + '" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="3"/><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 22 -10"/></filter></defs><g filter="url(#tools-ink-goo)"><circle cx="22" cy="22" r="22"/></g>';
+        var group = svg.querySelector("g");
+        var blots = slots.map(function () {
+            var path = document.createElementNS(ink.SVG_NS, "path");
+            group.appendChild(path);
+            return path;
+        });
+        tools.insertBefore(svg, toggle);
+        var progress = 0, destination = 0, menuRaf = 0, previous = null, melts = [];
+        function clearMenu() {
+            if (menuRaf) window.cancelAnimationFrame(menuRaf);
+            menuRaf = 0; previous = null;
+            melts.forEach(function (melt) { melt.remove(); });
+            melts = [];
+            blots.forEach(function (path) { path.setAttribute("d", ""); });
+            slots.forEach(function (slot) {
+                slot.style.transform = "";
+                slot.firstElementChild.style.opacity = "";
+            });
+            tools.classList.remove("tools-animating");
+        }
+        function paintMenu() {
+            slots.forEach(function (slot, i) {
+                var t = ink.clamp01((progress * (340 + (slots.length - 1) * 40) - i * 40) / 340);
+                var travel = ink.smooth(Math.min(1, t / .64));
+                var y = 22 - (i + 1) * 60 * travel;
+                slot.style.transform = "translateY(" + ((i + 1) * 60 * (1 - travel)).toFixed(2) + "px)";
+                slot.firstElementChild.style.opacity = t >= .64 ? "1" : "0";
+                melts[i].set(ink.clamp01((t - .64) / .36));
+                blots[i].setAttribute("d", t >= .64 || t === 0 ? "" : ink.path(ink.blob(
+                    22, y, 22 / (1 + .22 * Math.sin(travel * Math.PI)),
+                    22 * (1 + .22 * Math.sin(travel * Math.PI)), 0, i, 1.5, 1, 16)));
+            });
+        }
+        function menuFrame(now) {
+            if (!tools.isConnected || document.hidden) { resetMenu(); return; }
+            var elapsed = previous === null ? 0 : Math.max(0, now - previous);
+            previous = now;
+            var step = elapsed / (340 + (slots.length - 1) * 40);
+            progress = destination ? Math.min(1, progress + step) : Math.max(0, progress - step);
+            paintMenu();
+            if (progress === destination) { clearMenu(); return; }
+            menuRaf = window.requestAnimationFrame(menuFrame);
+        }
+        animateMenu = function (on) {
+            destination = on ? 1 : 0;
+            if (progress === destination && !menuRaf) return;
+            if (!menuRaf) {
+                tools.classList.add("tools-animating");
+                melts = slots.map(function (slot) { return ink.melt(slot.firstElementChild, { solid: true }); });
+                previous = null;
+                paintMenu();
+                menuRaf = window.requestAnimationFrame(menuFrame);
+            }
+        };
+        resetMenu = function () { clearMenu(); progress = destination = 0; expand(false); };
+        actions.addEventListener("focusin", function () {
+            if (destination) { progress = 1; clearMenu(); }
+        });
+        window.addEventListener("resize", resetMenu);
+        window.addEventListener("pagehide", resetMenu);
+        window.addEventListener("pageshow", resetMenu);
+        document.addEventListener("visibilitychange", function () { if (document.hidden) resetMenu(); });
+        tools.classList.add("tools-fluid");
+    }
     actions.inert = true;
     actions.hidden = false;
     root.classList.add("reading-tools-ready");

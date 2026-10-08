@@ -185,6 +185,20 @@
     fill: var(--primary);
 }
 
+.fluid-ip-body-press, .fluid-ip-eyes-press {
+    transform-origin: 250px 380px;
+    transition: transform 260ms cubic-bezier(.34,1.56,.64,1);
+}
+.fluid-ip-pressed .fluid-ip-body-press, .fluid-ip-pressed .fluid-ip-eyes-press {
+    transform: scale(1.045,.945);
+    transition: transform 90ms ease-out;
+}
+
+.fluid-drop-active .header { z-index: 2; }
+.fluid-drop-active #menu a.fluid-drop-selected {
+    color: color-mix(in srgb, var(--theme) var(--fluid-drop-contrast, 0%), var(--primary));
+}
+
 .fluid-ip-form {
     pointer-events: none;
 }
