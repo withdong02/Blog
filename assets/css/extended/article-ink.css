@@ -1,0 +1,97 @@
+/* A quiet paper edge; the type and reading column keep their existing measure. */
+.post-entry {
+    padding: 28px 30px;
+    border: 0;
+    border-radius: 28px 48px 30px 38px / 34px 32px 42px 28px;
+    transition: background-color 180ms ease;
+}
+.post-entry:nth-of-type(2n) {
+    border-radius: 40px 28px 44px 30px / 28px 42px 30px 38px;
+}
+.post-entry:active { transform: none; }
+.post-entry .entry-link { border-radius: inherit; }
+.post-entry .entry-link:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 5px;
+}
+.post-entry .entry-footer { padding-right: 38px; }
+.post-entry .echo-card-mark {
+    position: absolute;
+    right: 28px;
+    bottom: 24px;
+    width: 28px;
+    height: 28px;
+    pointer-events: none;
+    overflow: hidden;
+}
+.echo-card-mark .fluid-mark-body,
+.echo-card-mark .fluid-mark-eyes {
+    transform: translateY(550px);
+    transition: transform 650ms cubic-bezier(.4, 0, .2, 1);
+}
+.post-entry .fluid-mark.echo-card-mark .fluid-mark-eyes { fill: var(--entry); }
+.post-entry:focus-within .echo-card-mark .fluid-mark-body,
+.post-entry:focus-within .echo-card-mark .fluid-mark-eyes,
+.echo-paper-active .echo-card-mark .fluid-mark-body,
+.echo-paper-active .echo-card-mark .fluid-mark-eyes { transform: none; }
+@media (hover: hover) and (pointer: fine) {
+    .post-entry:hover .echo-card-mark .fluid-mark-body,
+    .post-entry:hover .echo-card-mark .fluid-mark-eyes { transform: none; }
+}
+.echo-article > .post-header {
+    position: relative;
+    padding: 26px 30px 28px;
+    background: var(--code-bg);
+    border-radius: 32px 48px 30px 40px / 38px 32px 44px 30px;
+}
+:root[data-theme="dark"] .echo-article > .post-header { background: var(--entry); }
+.echo-article > .post-header .breadcrumbs { padding-right: 40px; }
+.echo-article > .post-header .post-title { margin-top: 14px; }
+.echo-article-mark {
+    position: absolute;
+    right: 28px;
+    top: 22px;
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+}
+.echo-article-mark .fluid-mark { width: 100%; height: 100%; }
+.echo-article-mark .fluid-mark-eyes { fill: var(--code-bg); }
+:root[data-theme="dark"] .echo-article-mark .fluid-mark-eyes { fill: var(--entry); }
+.echo-article > .toc { border-radius: 20px 28px 22px 26px; }
+
+@view-transition { navigation: auto; }
+:root:is(.echo-article-opening, .echo-article-returning) { --echo-page-time: 900ms; }
+:root.echo-article-returning { --echo-page-time: 700ms; }
+:root:is(.echo-article-opening, .echo-article-returning)::view-transition-group(*) {
+    animation-duration: var(--echo-page-time);
+    animation-timing-function: cubic-bezier(.45, 0, .25, 1);
+}
+:root:is(.echo-article-opening, .echo-article-returning)::view-transition-old(root) {
+    animation: echo-page-out 180ms ease-out both;
+}
+:root:is(.echo-article-opening, .echo-article-returning)::view-transition-new(root) {
+    animation: echo-page-in var(--echo-page-time) ease-out both;
+}
+::view-transition-group(echo-paper) { overflow: hidden; border-radius: 32px 48px 30px 38px; }
+::view-transition-old(echo-paper), ::view-transition-new(echo-paper),
+::view-transition-old(echo-title), ::view-transition-new(echo-title) {
+    height: 100%;
+    mix-blend-mode: normal;
+    animation-duration: var(--echo-page-time);
+}
+::view-transition-old(echo-reader) { animation: echo-page-out 90ms both; }
+::view-transition-new(echo-reader) { animation: echo-reader-arrive var(--echo-page-time) cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes echo-page-out { to { opacity: 0; } }
+@keyframes echo-page-in { from { opacity: 0; } }
+@keyframes echo-reader-arrive {
+    from { transform: translateY(4px) rotate(-5deg); }
+    65% { transform: rotate(1deg); }
+    to { transform: none; }
+}
+@media (max-width: 600px) {
+    .post-entry { padding: 24px; border-radius: 24px 36px 26px 32px; }
+    .post-entry .echo-card-mark { right: 22px; bottom: 21px; }
+    .echo-article > .post-header { padding: 22px 20px 24px; border-radius: 26px 36px 24px 30px; }
+    .echo-article-mark { right: 20px; top: 18px; width: 26px; height: 26px; }
+}

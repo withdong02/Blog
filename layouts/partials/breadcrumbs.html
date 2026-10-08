@@ -1,0 +1,30 @@
+{{- if (.Param "ShowBreadCrumbs") -}}
+<nav class="breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    <a href='{{ "" | absLangURL }}'>
+        {{- i18n "nav_home" | default "Home" -}}
+    </a>
+    {{- $posts := site.GetPage "/posts" -}}
+    {{- $url := replace .Parent.Permalink (printf "%s" site.Home.Permalink) "" }}
+    {{- $lang_url := strings.TrimPrefix (printf "%s/" .Lang) $url -}}
+    {{- $scratch := newScratch }}
+    {{- range $index, $element := split $lang_url "/" }}
+        {{- $scratch.Add "path" (printf "%s/" $element )}}
+        {{- $bc_pg := site.GetPage ($scratch.Get "path") -}}
+        {{- if (and ($bc_pg) (gt (len . ) 0))}}
+            {{- $href := $bc_pg.Permalink -}}
+            {{- $name := $bc_pg.Name -}}
+            {{- if and $posts (eq $bc_pg.RelPermalink $posts.RelPermalink) -}}
+                {{- $href = printf "%s#articles" site.Home.RelPermalink -}}
+                {{- $name = i18n "article_list" | default "Articles" -}}
+            {{- end -}}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="{{ $href }}">
+                {{- $name -}}
+            </a>
+        {{- end }}
+    {{- end -}}
+</nav>
+{{- end -}}

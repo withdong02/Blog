@@ -26,6 +26,12 @@
 - id: nav_home
   translation: "首页"
 
+- id: article_list
+  translation: "文章列表"
+
+- id: back_to_articles
+  translation: "返回文章列表"
+
 - id: edit_post
   translation: "编辑"
 

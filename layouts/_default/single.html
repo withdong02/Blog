@@ -8,9 +8,12 @@
    Do not edit the theme copy.
 */ -}}
 
-<article class="post-single">
+<article class="post-single{{ if eq .Section "posts" }} echo-article{{ end }}">
   <header class="post-header">
     {{ partial "breadcrumbs.html" . }}
+    {{- if eq .Section "posts" }}
+    <span class="echo-article-mark" aria-hidden="true">{{ site.Params.label.iconSVG | safeHTML }}</span>
+    {{- end }}
     <h1 class="post-title entry-hint-parent">
       {{ .Title }}
       {{- if .Draft }}
@@ -35,6 +38,7 @@
       {{- partial "post_canonical.html" . -}}
     </div>
     {{- end }}
+    {{- if eq .Section "posts" }}<span id="echo-article-ready" hidden></span>{{- end }}
   </header>
   {{- $isHidden := (.Param "cover.hiddenInSingle") | default (.Param "cover.hidden") | default false }}
   {{- partial "cover.html" (dict "cxt" . "IsSingle" true "isHidden" $isHidden) }}
@@ -54,7 +58,7 @@
     {{- if eq .Section "posts" }}
     <a class="fluid-signoff" href="{{ site.Home.RelPermalink }}#articles">
       <span class="fluid-signoff-figure">{{ site.Params.label.iconSVG | safeHTML }}</span>
-      <span class="fluid-signoff-copy"><span class="fluid-signoff-note">这一页，先读到这里。</span><span class="fluid-signoff-link">再去翻翻 <span aria-hidden="true">↗</span></span></span>
+      <span class="fluid-signoff-copy"><span class="fluid-signoff-note">这一页，先读到这里。</span><span class="fluid-signoff-link"><span aria-hidden="true">←</span>{{ i18n "back_to_articles" | default "Back to articles" }}</span></span>
     </a>
     {{- end }}
     {{- $tags := .Language.Params.Taxonomies.tag | default "tags" }}

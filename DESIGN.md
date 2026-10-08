@@ -57,6 +57,8 @@
 
 导航里的首页链接会倒放同一条时间轴把元素收回；文章卡片链接不等待动画、直接导航。修饰键点击保持原生行为。至少 600px 宽且精细指针启用完整编排；窄屏、触屏使用四团墨团的紧凑编排，入场 2s、收回 1.6s，规格见 §10。入口及编排期间阅读工具容器保持 inert，结束进入列表才恢复交互。
 
+导航语义：顶部 logo 与面包屑的根入口都叫“首页”，都指向 `/` 的回声入口。文章页的 `Posts` 层级改为“文章列表”，链接到 `/#articles`；文末签名明确写“返回文章列表”，指向同一地址。读者在文章顶部与末尾都可直接回到列表，不需要重走入口动画。
+
 ### B 墨水换色
 
 主题键点击后以 View Transition + `clip-path: path(blob)` 从按钮漫开约 800ms；期间屏蔽 `.theme-transition` 的颜色过渡（否则同一个变化被两套机制同时插值）。不支持时维持原切换。翻转逻辑与 PaperMod 一致（`data-theme` + `localStorage 'pref-theme'`）。
@@ -149,11 +151,13 @@ headless Chrome + CDP 实测：右向拖动 `angle=0.000 / stretch=1.695`；原�
 | `layouts/partials/extend_footer.html` | 各脚本的加载与指纹化；也是 PaperMod 复制按钮等的注入点 |
 | `assets/css/extended/fluid-ip.css` | 本体形象与小形象的全部样式（含场景 D 的 `.fluid-read-blob`、文末的 `.fluid-signoff-risen`） |
 | `assets/css/extended/fluid-transition.css` | 入口层 |
+| `assets/css/extended/article-ink.css` | 文章纸片轮廓与跨页快照的有限过渡 |
 | `assets/css/extended/toc-sidebar.css` | 目录条与顶部进度条（含被场景 D 临时去掉过渡的 `.toc-progress-fluid`） |
 | `assets/js/fluid-ink.js` | `window.FluidInk`，共用原语 |
 | `assets/js/fluid-ip.js` | 场景 C：点击演出与拖拽物理 |
 | `assets/js/fluid-transition.js` | 场景 A：入口编排；场景 B：墨水换色 |
 | `assets/js/fluid-read.js` | 场景 D：阅读进度上的挂篮 |
+| `assets/js/article-ink.js` | 回声递页：卡片标记与原生跨文档快照交接 |
 | `assets/js/toc-sidebar.js` | 目录条。为场景 D 暴露 `window.TocRail`（`bar` / `value()` / `onProgress(cb)` / `drive(on)`） |
 | `themes/PaperMod/` | 不改 |
 
@@ -221,3 +225,12 @@ node tests/fluid-read-check.mjs        # 场景 D：门槛、接管与归还、�
 - 松手命中时完成余下的融入后再激活一次原链接；松手落空或取消时先分离，再沿用原回弹或断开演出。松手坐标决定导航，动画中的旧入口不能误触发；隐藏、窗口变化、返回入口和演出接管立即清理墨带、文字颜色和待执行导航。
 - 检查增加融入中间态、移出反向、跨入口连续性、松手后收尾与中断撤销；浏览器检查亮暗色、不同长度导航和墨团进入/退出的连续画面。
 - 手势只由最初的 `pointerId` 更新和结束；另一根手指、另一支笔或其他鼠标按钮不能接管或触发松手导航。复现检查覆盖触屏电脑上的鼠标与触摸同时输入。
+
+## 13. 回声递页（2026-10-08）
+
+- 意图：点击文章卡片时，让“列表中的这一篇”连续成为“正在阅读的这一篇”。卡片轮廓采用不对称的柔和圆角，正文保持原行宽；文章页仅标题区与原生目录柔化，不给整篇正文套变形容器。
+- 列表卡片右下角是一小池墨，悬停或键盘聚焦时回声以原比例从池中探出，移开后沉回；不再通过纵向压缩本体伪装墨迹。池与身体在同一局部 SVG goo 组里融合，眼睛在滤镜之上随身体位移，SVG 视口遮住水面以下的部分。它是装饰，不新增按钮，不移动标题、摘要或文章位置；使用导航标记的克隆，眼睛取所在纸片背景。触屏仍直接轻触原链接。
+- 原生跨文档 View Transition 在列表与文章之间交接纸片、标题和回声标记，进场 900ms、返回 700ms；快照淡入淡出与位移使用同一时长，不让标题先淡完再空走。只为实际对应且在视口内的卡片命名，不捕获整份列表；路径与标题都由现有真实链接和 DOM 决定。回声抵达标题区后静止。
+- 不阻止默认链接导航，不等待动画结束、不抓取或替换正文；修饰键、新标签、浏览器返回及无 JS 仍是原生行为。浏览器不支持、标题不在视口、跳到文章锚点或无对应卡片时使用普通导航。主题墨变与跨页转场使用不同命名，只在跨页事件中设置临时类和名字。
+- `assets/js/article-ink.js` 在 head 提前监听 `pageswap`/`pagereveal`，无需 sessionStorage。首次加载的 `pageshow` 可以晚于首帧，不能清掉正在进行的转场；清理由转场 finished、pagehide 与页面隐藏持有。head 的 `rel="expect"` 只等待参与交接的静态 DOM：文章标题区结尾的标记或列表正文之后的标记，避免冷加载首帧尚无标题而跳过；不等待图片、评论或完整 load。截帧之后归还名字、结束后归还类，BFCache 复用遵守同一所有权；无持续帧链，无生成素材、依赖或全屏墨化滤镜。
+- `node tests/article-ink-check.mjs` 覆盖路径匹配、无能力、离屏、锚点、正反交接、取消与 BFCache 清理；浏览器确认真实跨页动画、键盘、窄屏及亮暗主题。

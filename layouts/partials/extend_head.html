@@ -1,3 +1,13 @@
 {{- /* Parser-blocking so the entry surface is ready before first paint. */ -}}
 {{- $transition := resources.Get "js/fluid-transition.js" | minify | fingerprint "sha256" }}
 <script src="{{ $transition.RelPermalink }}" integrity="{{ $transition.Data.Integrity }}" data-home-path="{{ site.Home.RelPermalink }}"></script>
+{{- /* pagereveal must be registered before the first rendering opportunity. */ -}}
+{{- $articleInk := resources.Get "js/article-ink.js" | minify | fingerprint "sha256" }}
+{{- with site.GetPage "/posts" }}
+<script src="{{ $articleInk.RelPermalink }}" integrity="{{ $articleInk.Data.Integrity }}" data-posts-path="{{ .RelPermalink }}"></script>
+{{- end }}
+{{- if and .IsPage (eq .Section "posts") }}
+<link rel="expect" blocking="render" href="#echo-article-ready">
+{{- else if not .IsPage }}
+<link rel="expect" blocking="render" href="#echo-list-ready">
+{{- end }}

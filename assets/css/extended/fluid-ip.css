@@ -67,7 +67,7 @@
 .fluid-signoff-copy { display: grid; gap: 8px; }
 .fluid-signoff-note { color: var(--secondary); font-size: 14px; }
 .fluid-signoff-link { font-size: 19px; font-weight: 600; }
-.fluid-signoff-link > span { display: inline-block; margin-left: 8px; }
+.fluid-signoff-link > span { display: inline-block; margin-right: 8px; }
 .fluid-signoff:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; }
 
 /* ---- Reading progress attachment (scenario D, assets/js/fluid-read.js) ---- */
