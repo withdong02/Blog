@@ -620,6 +620,29 @@ for (const options of [{ wide: false }, { fine: false }]) {
         `goo=${JSON.stringify(h.gooAttrs)}`);
 }
 
+/* A second pull can settle before the first detached blot flies home. */
+for (const secondX of [350, 900]) {
+    const h = makeHarness();
+    h.drag(400, 400, 900, 900, 16, 0);
+    h.release();
+    h.drag(300, 300, secondX, 300, 12, 2);
+    h.release();
+    let lost = 0;
+    let settledDuringBreak = false;
+    for (let i = 0; i < 400 && h.pending(); i++) {
+        h.step();
+        const s = h.state();
+        if (!s.breaking) continue;
+        if (!s.bounds) lost++;
+        if (Math.hypot(s.x - 256, s.y - 250) < 1) settledDuringBreak = true;
+    }
+    check(`early second release ${secondX}: pull settles during the first break`, settledDuringBreak);
+    check(`early second release ${secondX}: first blot keeps its return region`, lost === 0,
+        `clipped frames=${lost}`);
+    check(`early second release ${secondX}: all owners finish and restore the region`,
+        !h.state().breaking && h.state().bounds === null && h.pending() === 0);
+}
+
 /* 8e. The broken-off pattern comes home as ink: it has to be a whole blob
    again before it starts to move, not melt while it flies. And while the
    pattern is fully on show, no ink may sit under it — the forms layer is

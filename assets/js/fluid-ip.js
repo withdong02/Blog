@@ -488,7 +488,7 @@
        the small region around the body, so the blob vanished beyond that box
        and reappeared inside it (2026-09-30). */
     function gooNeeded() {
-        return !!(dragStart || dragSVG || dragActive || dropMix || dropPending || dropReturning)
+        return !!(breakCleanup || dragStart || dragSVG || dragActive || dropMix || dropPending || dropReturning)
             || Math.sqrt(Math.pow(bx - BCX, 2) + Math.pow(by - BCY, 2)) > BR * 0.75;
     }
 
@@ -872,8 +872,8 @@
             if (breakRaf) window.cancelAnimationFrame(breakRaf);
             breakRaf = 0;
             els.forEach(function (n) { n.remove(); });
-            restoreGoo();
             breakCleanup = null;
+            restoreGoo();
         };
 
         var start = null;
