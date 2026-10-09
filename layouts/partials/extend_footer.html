@@ -31,6 +31,8 @@
 {{- if .IsHome }}
 {{- $fluidIpJs := resources.Get "js/fluid-ip.js" | minify | fingerprint "sha256" }}
 <script src="{{ $fluidIpJs.RelPermalink }}" integrity="{{ $fluidIpJs.Data.Integrity }}" defer></script>
+{{- $readingMapJs := resources.Get "js/reading-map.js" | minify | fingerprint "sha256" }}
+<script src="{{ $readingMapJs.RelPermalink }}" integrity="{{ $readingMapJs.Data.Integrity }}" defer></script>
 {{- end }}
 {{- /* Theme toggle: move the button out of the header to the end of <body>,
        where custom.css styles it as a fixed bottom-right round button.

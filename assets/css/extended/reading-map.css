@@ -1,0 +1,36 @@
+/* The route lives in the gutters; the islands keep their native reading order. */
+.main:has(.echo-atlas) { max-width: calc(1080px + var(--gap) * 2); }
+.main:has(.echo-atlas) > .home-info { max-width: none; min-height: 224px; margin: 24px 0 44px; }
+.echo-atlas { margin: 0 0 64px; }
+.echo-atlas-landscape { position: relative; }
+.echo-atlas-islands { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 112px; row-gap: 40px; align-items: start; }
+.echo-atlas-islands > .post-entry { margin: 0; padding: 34px 34px 30px; min-width: 0; border-radius: 40px 68px 44px 58px / 54px 44px 62px 40px; }
+.echo-atlas-islands > .post-entry:nth-child(even) { margin-top: 72px; border-radius: 62px 40px 66px 44px / 42px 62px 44px 58px; }
+.echo-atlas-islands .entry-header h2 { font-size: 25px; line-height: 1.45; }
+.echo-atlas-islands .entry-content { margin: 14px 0 22px; font-size: 15px; line-height: 1.8; -webkit-line-clamp: 3; }
+.echo-atlas-topic { margin-top: 12px; padding-right: 38px; font-size: 14px; color: var(--secondary); }
+.echo-atlas-current { outline: 1px solid var(--primary); outline-offset: 7px; }
+.echo-atlas-current:has(.entry-link:focus-visible) { outline: none; }
+.echo-atlas-route { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.echo-atlas-trail { stroke: var(--primary); stroke-width: 2; stroke-linecap: round; opacity: .28; }
+.echo-atlas-guide { position: absolute; top: 0; left: 0; width: 36px; height: 36px; pointer-events: none; offset-anchor: center; offset-rotate: 0deg; }
+.echo-atlas-guide[hidden] { display: none; }
+.echo-atlas-guide .fluid-mark { width: 100%; height: 100%; }
+.fluid-portal-active:not(.fluid-composing) .echo-atlas { visibility: hidden; }
+@media (min-width: 900px) {
+    .main:has(.echo-atlas) > .home-info { padding-right: calc(50% + 56px); gap: 12px; }
+    .main:has(.echo-atlas) > .home-info :is(.fluid-ip-orb, .fluid-ip-dock) { position: absolute; left: calc(75% + 28px); right: auto; top: 50%; width: 280px; margin: 0; transform: translate(-38.75%, -56%); }
+}
+@media (max-width: 899px) {
+    .main:has(.echo-atlas) > .home-info { min-height: 0; }
+}
+@media (max-width: 799px) {
+    .main:has(.echo-atlas) > .home-info { padding-left: 46px; }
+    .echo-atlas-islands { grid-template-columns: minmax(0, 1fr); padding-left: 46px; row-gap: 34px; }
+    .echo-atlas-islands > .post-entry { padding: 26px 24px; border-radius: 28px 46px 30px 38px / 36px 30px 44px 28px; }
+    .echo-atlas-islands > .post-entry:nth-child(even) { margin-top: 0; border-radius: 40px 28px 44px 30px / 28px 42px 30px 38px; }
+    .echo-atlas-islands .entry-header h2 { font-size: 21px; }
+    .echo-atlas-islands .entry-content { font-size: 14px; }
+    .echo-atlas-islands .entry-footer { font-size: 12px; }
+    .echo-atlas-guide { width: 30px; height: 30px; }
+}
