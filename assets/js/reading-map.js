@@ -40,18 +40,39 @@
         cancel();
         var box = landscape.getBoundingClientRect();
         if (!box.width) { guide.hidden = true; return; }
-        var x = narrow.matches ? 22 : box.width / 2;
-        var y = 0, path = "M " + x + " " + y;
-        stops = cards.map(function (card, index) {
-            var rect = card.getBoundingClientRect();
-            var nx = narrow.matches ? index % 2 ? 26 : 18 : index % 2 ? rect.left - box.left - 32 : rect.right - box.left + 32;
+        var rects = cards.map(function (card) { return card.getBoundingClientRect(); });
+        var guideWidth = parseFloat(window.getComputedStyle(guide).width) || 28;
+        var center = narrow.matches ? 16 : box.width / 2;
+        var bend = narrow.matches ? 2 : 8;
+        if (!narrow.matches && rects.length > 1) {
+            var left = Math.max.apply(null, rects.filter(function (_, i) { return i % 2 === 0; }).map(function (rect) { return rect.right - box.left; }));
+            var right = Math.min.apply(null, rects.filter(function (_, i) { return i % 2 === 1; }).map(function (rect) { return rect.left - box.left; }));
+            center = (left + right) / 2;
+            bend = Math.min(bend, Math.max(0, (right - left - guideWidth) / 2 - 8));
+        }
+        // One long wave: card titles mark stops without forcing a turn at each stop.
+        function wave(y) {
+            var half = Math.floor(y / 320), t = y / 320 - half;
+            var side = half % 2 ? bend : -bend;
+            return { x: center + side * (1 - 2 * t * t * (3 - 2 * t)), slope: -side * 12 * t * (1 - t) / 320 };
+        }
+        var y = 0, point = wave(y), path = "M " + point.x + " 0";
+        function append(ny) {
+            var next = wave(ny), third = (ny - y) / 3;
+            path += " C " + (point.x + point.slope * third) + " " + (y + third) + " " + (next.x - next.slope * third) + " " + (ny - third) + " " + next.x + " " + ny;
+            y = ny; point = next;
+        }
+        function extend(ny) {
+            for (var turn = (Math.floor(y / 320) + 1) * 320; turn < ny; turn += 320) append(turn);
+            if (ny > y) append(ny);
+        }
+        stops = rects.map(function (rect) {
             var ny = rect.top - box.top + 42;
-            var middle = (y + ny) / 2;
-            path += " C " + x + " " + middle + " " + nx + " " + middle + " " + nx + " " + ny;
+            extend(ny);
             ruler.setAttribute("d", path);
-            x = nx; y = ny;
-            return { x: nx, y: ny, distance: ruler.getTotalLength() };
+            return { x: point.x, y: ny, distance: ruler.getTotalLength() };
         });
+        extend(Math.max(y, box.height - guideWidth / 2));
         route.setAttribute("viewBox", "0 0 " + box.width + " " + box.height);
         trail.setAttribute("d", path);
         if (followsPath) guide.style.offsetPath = 'path("' + path + '")';

@@ -1,0 +1,39 @@
+{{ define "main" }}
+{{- $pages := where site.RegularPages "Type" "in" site.Params.mainSections -}}
+{{- $pages = where $pages "Params.hiddenInHomeList" "!=" "true" -}}
+{{- $paginator := .Paginate $pages -}}
+<div class="journal-home" id="articles">
+  {{- if eq $paginator.PageNumber 1 }}
+  {{ partial "home_info.html" . }}
+  {{- else }}
+  <header class="journal-page-heading"><h1>文章列表</h1><p>第 {{ $paginator.PageNumber }} 页，共 {{ $paginator.TotalPages }} 页</p></header>
+  {{- end }}
+  <section class="echo-atlas" aria-label="文章列表">
+    <div class="echo-atlas-landscape">
+      <svg class="echo-atlas-route" aria-hidden="true" focusable="false"><path class="echo-atlas-trail" fill="none" /></svg>
+      <span class="echo-atlas-guide" aria-hidden="true" hidden>{{ site.Params.label.iconSVG | safeHTML }}</span>
+      <div class="echo-atlas-islands">
+        {{- range $paginator.Pages }}
+        <article class="post-entry">
+          {{- $isHidden := (.Param "cover.hiddenInList") | default (.Param "cover.hidden") | default false }}
+          {{- partial "cover.html" (dict "cxt" . "IsSingle" false "isHidden" $isHidden) }}
+          <header class="entry-header"><h2>{{ .Title }}{{ if .Draft }} <small>草稿</small>{{ end }}</h2></header>
+          {{- if ne (.Param "hideSummary") true }}<div class="entry-content"><p>{{ .Summary | plainify | htmlUnescape }}</p></div>{{- end }}
+          {{- if not (.Param "hideMeta") }}<footer class="entry-footer">{{ partial "post_meta.html" . }}</footer>{{- end }}
+          {{- with .GetTerms "categories" }}<div class="echo-atlas-topic">{{ range $index, $category := . }}{{ if $index }} · {{ end }}{{ $category.LinkTitle }}{{ end }}</div>{{- end }}
+          <a class="entry-link" aria-label="阅读：{{ .Title | plainify }}" href="{{ .Permalink }}"></a>
+        </article>
+        {{- end }}
+        {{- if not $paginator.Pages }}<p>文章还在准备中。</p>{{- end }}
+      </div>
+    </div>
+  </section>
+  {{- if gt $paginator.TotalPages 1 }}
+  <nav class="journal-pagination" aria-label="文章分页">
+    {{- if $paginator.HasPrev }}<a href="{{ $paginator.Prev.URL | absURL }}">← 上一页</a>{{- else }}<span></span>{{- end }}
+    <span>{{ printf "%02d" $paginator.PageNumber }} / {{ printf "%02d" $paginator.TotalPages }}</span>
+    {{- if $paginator.HasNext }}<a href="{{ $paginator.Next.URL | absURL }}">下一页 →</a>{{- else }}<span></span>{{- end }}
+  </nav>
+  {{- end }}
+</div>
+{{ end }}

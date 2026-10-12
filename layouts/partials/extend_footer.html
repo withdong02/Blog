@@ -16,23 +16,15 @@
        see DESIGN.md. Site-wide and before fluid-ip.js. */ -}}
 {{- $fluidInkJs := resources.Get "js/fluid-ink.js" | minify | fingerprint "sha256" }}
 <script src="{{ $fluidInkJs.RelPermalink }}" integrity="{{ $fluidInkJs.Data.Integrity }}" defer></script>
-{{- /* Reading-progress ink (scenario D): a clone of the mark rides the tip of
-       the progress bar on article pages — see assets/js/fluid-read.js. Site-wide
-       after toc-sidebar.js and fluid-ink.js (defer keeps the order); it gates
-       itself on window.TocRail, so pages without the rail cost one if. */ -}}
-{{- $fluidReadJs := resources.Get "js/fluid-read.js" | minify | fingerprint "sha256" }}
-<script src="{{ $fluidReadJs.RelPermalink }}" integrity="{{ $fluidReadJs.Data.Integrity }}" defer></script>
-{{- /* Home-page figure, 回声 (Echo) — see assets/js/fluid-ip.js and
-       DESIGN.md. Only the home page carries the figure, so only
-       the home page loads the script; on the paginated pages past the first
-       there is no figure and the script exits on its first line. Same Hugo
-       asset pipeline as toc-sidebar.js above: the fingerprinted URL changes
-       with the script. */ -}}
+{{- /* The original progress bar remains; its character attachment is retired. */ -}}
+{{- /* Home-only finite journal motion; footer caching is shared by its pagination. */ -}}
 {{- if .IsHome }}
 {{- $fluidIpJs := resources.Get "js/fluid-ip.js" | minify | fingerprint "sha256" }}
 <script src="{{ $fluidIpJs.RelPermalink }}" integrity="{{ $fluidIpJs.Data.Integrity }}" defer></script>
 {{- $readingMapJs := resources.Get "js/reading-map.js" | minify | fingerprint "sha256" }}
 <script src="{{ $readingMapJs.RelPermalink }}" integrity="{{ $readingMapJs.Data.Integrity }}" defer></script>
+{{- $journalJs := resources.Get "js/journal.js" | minify | fingerprint "sha256" }}
+<script src="{{ $journalJs.RelPermalink }}" integrity="{{ $journalJs.Data.Integrity }}" defer></script>
 {{- end }}
 {{- /* Theme toggle: move the button out of the header to the end of <body>,
        where custom.css styles it as a fixed bottom-right round button.

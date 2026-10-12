@@ -1,0 +1,59 @@
+/* Compact reading cards, with one guide traveling through their shared gutter. */
+:root { --nav-width: 840px; }
+.logo .fluid-mark { display: none; }
+.main:has(.journal-home .echo-atlas) { max-width: calc(840px + var(--gap) * 2); }
+.journal-home { scroll-margin-top: 24px; }
+.journal-home > .home-info { max-width: none; min-height: 300px; margin: 32px 0 56px; text-align: left; }
+.journal-home > .home-info > :not(.fluid-ip-orb) { padding-inline-start: clamp(24px, 4vw, 48px); }
+.journal-home > .home-info h1 { font-size: 32px; line-height: 1.4; }
+.journal-home > .home-info .entry-content { font-size: 15px; line-height: 1.8; }
+.journal-page-heading { margin: 24px 0 40px; }
+.journal-page-heading h1 { font-size: 32px; }
+.journal-page-heading p { margin-top: 12px; color: var(--secondary); font-size: 14px; }
+.journal-pagination { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center; padding: 0 0 48px; font-size: 13px; }
+.journal-pagination > span { color: var(--secondary); font-variant-numeric: tabular-nums; }
+.journal-pagination a { display: flex; align-items: center; min-height: 44px; }
+.journal-pagination a:last-child { justify-self: end; }
+.journal-home a:focus-visible { outline: 2px solid var(--primary); outline-offset: 5px; }
+.journal-home .entry-link:focus-visible { outline-offset: 5px; }
+.journal-home .echo-atlas { margin-bottom: 40px; }
+.journal-home .echo-atlas-islands { column-gap: 64px; row-gap: 28px; padding-left: 0; }
+.journal-home .echo-atlas-islands > .post-entry { padding: 26px 26px 24px; border-radius: 28px 44px 30px 38px / 36px 30px 40px 28px; }
+.journal-home .echo-atlas-islands > .post-entry:nth-child(even) { margin-top: 36px; border-radius: 40px 28px 42px 30px / 28px 38px 30px 36px; }
+.journal-home .echo-atlas-islands > .post-entry:nth-child(2) { margin-top: 0; }
+.journal-home .echo-atlas-islands .entry-header h2 { font-size: 23px; }
+.journal-home .echo-atlas-islands .entry-content { margin: 12px 0 18px; font-size: 14px; }
+.journal-home .entry-footer, .journal-home .echo-atlas-topic { padding-right: 0; }
+.journal-home .echo-atlas-guide { width: 28px; height: 28px; }
+.journal-home .echo-atlas-trail { stroke-width: 1.5; opacity: .2; }
+/* Keep the improved reading hierarchy, without a new color system. */
+.echo-article > .post-header { padding: 28px 30px; }
+.echo-article .post-title { font-size: clamp(32px, 4vw, 44px); line-height: 1.4; letter-spacing: -.035em; }
+.echo-article .post-description { margin: 20px 0; font-size: 16px; line-height: 1.85; color: var(--secondary); }
+.echo-article .post-meta { font-size: 12px; line-height: 1.85; }
+.echo-article .breadcrumbs { font-size: 12px; }
+.echo-article .post-content { line-height: 1.95; }
+.echo-article .post-content h2 { margin-top: 48px; letter-spacing: -.025em; }
+.echo-article .toc { border-radius: 12px; }
+@media (min-width: 900px) {
+    .journal-home > .home-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 64px; row-gap: 16px; align-content: center; padding-right: 0; }
+    .journal-home > .home-info > :not(.fluid-ip-orb) { grid-column: 1; }
+    /* Center the visible body, compensating for the SVG's asymmetric reserve. */
+    .journal-home > .home-info .fluid-ip-orb { position: relative; grid-column: 2; grid-row: 1 / 4; justify-self: center; align-self: center; left: auto; right: auto; top: auto; width: 260px; margin: 0; transform: translate(11.25%, -6.5%); }
+}
+@media (max-width: 899px) {
+    .journal-home > .home-info { min-height: 0; margin: 24px 0 40px; }
+}
+@media (max-width: 799px) {
+    .journal-home > .home-info { padding-left: 40px; }
+    .journal-home > .home-info h1 { font-size: 28px; }
+    .journal-home .echo-atlas-islands > .post-entry:nth-child(even) { margin-top: 0; }
+    .journal-home .echo-atlas-islands .entry-header h2 { font-size: 21px; }
+    .journal-home .echo-atlas-islands { padding-left: 40px; }
+    .journal-home .echo-atlas-guide { width: 24px; height: 24px; }
+}
+@media (max-width: 640px) {
+    .echo-article > .post-header { padding: 22px 24px; }
+    .echo-article .post-title { font-size: 30px; }
+    .echo-article .post-description { font-size: 14px; }
+}

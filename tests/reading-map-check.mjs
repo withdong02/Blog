@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import vm from 'node:vm';
 
 const source = readFileSync(new URL('../assets/js/reading-map.js', import.meta.url), 'utf8');
-function setup({ capable = true, narrow = false, portal = false } = {}) {
+function setup({ capable = true, narrow = false, portal = false, gap = 64, tops = [0, 36, 300, 336, 670, 706] } = {}) {
   const handlers = {}, frames = new Map(), flights = [];
   let nextFrame = 0, computedDistance = '0px';
   function node() {
@@ -19,9 +19,9 @@ function setup({ capable = true, narrow = false, portal = false } = {}) {
   const root = node(), landscape = node(), route = node(), trail = node(), guide = node();
   if (portal) root.classList.add('fluid-portal-active');
   landscape.getBoundingClientRect = () => ({ left: 0, top: 0, width: 1000, height: 800 });
-  const cards = [0, 1, 2].map(i => {
+  const cards = tops.map((top, i) => {
     const card = node();
-    card.getBoundingClientRect = () => ({ left: i % 2 ? 556 : 0, right: i % 2 ? 1000 : 444, top: i * 160 });
+    card.getBoundingClientRect = () => ({ left: i % 2 ? (1000 + gap) / 2 : 0, right: i % 2 ? 1000 : (1000 - gap) / 2, top });
     return card;
   });
   const elements = { '.echo-atlas-landscape': landscape,
@@ -37,7 +37,7 @@ function setup({ capable = true, narrow = false, portal = false } = {}) {
     createElementNS: () => node(), addEventListener: (name, fn) => { handlers[name] = fn; } };
   const window = { CSS: { supports: () => capable },
     matchMedia: q => ({ matches: q.includes('max-width') ? narrow : true }),
-    getComputedStyle: () => ({ offsetDistance: computedDistance }),
+    getComputedStyle: () => ({ offsetDistance: computedDistance, width: narrow ? '24px' : '28px' }),
     addEventListener: (name, fn) => { handlers[name] = fn; },
     requestAnimationFrame: fn => { frames.set(++nextFrame, fn); return nextFrame; },
     cancelAnimationFrame: id => frames.delete(id) };
@@ -49,7 +49,7 @@ function setup({ capable = true, narrow = false, portal = false } = {}) {
 
 vm.runInNewContext(source, { document: { querySelector: () => null } });
 const map = setup();
-assert.match(map.trail.attributes.d, /^M 500 0 C/);
+assert.match(map.trail.attributes.d, /^M 492 0 C/);
 assert.equal(map.guide.hidden, false);
 map.cards[0].handlers.focusin();
 map.computed('20px');
@@ -87,7 +87,48 @@ assert.equal(map.flights.at(-1).canceled, true);
 const fallback = setup({ capable: false, narrow: true });
 fallback.cards[0].handlers.focusin();
 assert.equal(fallback.flights.length, 0);
-assert.match(fallback.guide.style.transform, /translate\(18px,42px\)/);
+assert.match(fallback.guide.style.transform, /translate\(14\.\d+px,42px\)/);
+function segments(path) {
+  const [start, ...curves] = path.split(' C ');
+  let origin = start.slice(2).split(' ').map(Number);
+  return curves.map(curve => {
+    const coordinates = curve.split(' ').map(Number);
+    const points = [origin, coordinates.slice(0, 2), coordinates.slice(2, 4), coordinates.slice(4, 6)];
+    origin = points[3];
+    return points;
+  });
+}
+for (const gap of [48, 64, 112]) {
+  const compact = setup({ gap });
+  const curves = segments(compact.trail.attributes.d);
+  for (const [i, points] of curves.entries()) {
+    for (const [x] of points) {
+      // A cubic stays in the convex hull of its controls, including between stops.
+      assert.ok(x - 14 >= (1000 - gap) / 2 + 8 - 1e-9, 'entire guide path clears the left card and focus outline');
+      assert.ok(x + 14 <= (1000 + gap) / 2 - 8 + 1e-9, 'entire guide path clears the right card and focus outline');
+    }
+    assert.ok(points[3][1] > points[0][1], 'route always advances down the page');
+    if (i) {
+      const previous = curves[i - 1];
+      const incoming = (previous[3][0] - previous[2][0]) / (previous[3][1] - previous[2][1]);
+      const outgoing = (points[1][0] - points[0][0]) / (points[1][1] - points[0][1]);
+      assert.ok(Math.abs(incoming - outgoing) < 1e-9, 'route tangent remains continuous through stops');
+    }
+  }
+  assert.ok(curves[0][3][0] < curves[1][3][0], 'two staggered cards share a sweep rather than forcing a left-right reversal');
+  assert.equal(curves.at(-1)[3][1], 786, 'route continues below the last title to the end of the list');
+}
+const single = setup({ tops: [0] });
+assert.equal(segments(single.trail.attributes.d).at(-1)[3][1], 786, 'a one-article page retains a complete finite route');
+const aligned = setup({ tops: [0, 0, 300, 336] });
+assert.ok(segments(aligned.trail.attributes.d).every(points => points[3][1] > points[0][1]), 'aligned first-row titles do not introduce a zero-length curve');
+aligned.cards[0].handlers.focusin();
+aligned.cards[1].handlers.focusin();
+assert.equal(aligned.flights[0].keyframes[1].offsetDistance, aligned.flights[1].keyframes[1].offsetDistance, 'aligned cards share one route stop');
+const oneColumn = setup({ narrow: true, tops: [0, 210, 520] });
+for (const points of segments(oneColumn.trail.attributes.d)) {
+  for (const [x] of points) assert.ok(x >= 14 && x <= 18, 'narrow path stays in its reserved rail');
+}
 assert.equal(setup({ portal: true }).guide.hidden, true);
 await Promise.resolve();
 console.log('reading-map contracts passed: native links, focus, rapid retarget, cleanup, idle stop, narrow fallback');
@@ -100,7 +141,7 @@ const links = html => [...html.matchAll(/<a class=entry-link\b[^>]*href=(?:"([^"
 const mapLinks = pages.flatMap(file => {
   const html = readFileSync(new URL(file, built), 'utf8');
   if (html.includes('http-equiv=refresh')) return [];
-  assert.ok(html.includes('echo-atlas-islands'), `${file} retains the map`);
+  assert.ok(html.includes('journal-home'), `${file} retains the current article index`);
   assert.equal(html.includes('echo-atlas-discover'), false, 'home and pagination have no discovery button');
   return links(html);
 });
@@ -109,4 +150,4 @@ for (const sectionLink of links(readFileSync(new URL('posts/index.html', built),
   assert.ok(mapLinks.includes(sectionLink), 'section articles remain reachable from the map');
 }
 assert.equal(readFileSync(new URL('taxonomies/index.html', built), 'utf8').includes('echo-atlas-islands'), false);
-console.log(`built map passed: ${mapLinks.length} unique native article links, no discovery button and home-only scope`);
+console.log(`built index passed: ${mapLinks.length} unique native article links; map runtime checked above`);

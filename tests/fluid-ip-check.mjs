@@ -292,10 +292,9 @@ for (const options of [{ wide: false }, { fine: false }]) {
     check("ends clean: nothing left scheduled", h.pending() === 0, `pending=${h.pending()}`);
     check("ends clean: blots did animate on the way",
         h.framesRun() > 100, `frames=${h.framesRun()}`);
-    check("forms support a path and text",
-        h.forms.length === 3 && h.forms[0].tag === "path"
-            && h.forms[1].tag === "text" && h.forms[1].textContent === "文"
-            && h.forms[2].tag === "text" && h.forms[2].textContent === "</>");
+    check("first story contains only distinct vector symbols",
+        h.forms.length === 3 && h.forms.every(node => node.tag === "path" && node.d && !node.textContent)
+            && new Set(h.forms.map(node => node.d)).size === 3);
 }
 
 /* The settled forms can return early without snapping or a second loop. */
@@ -311,10 +310,12 @@ for (const options of [{ wide: false }, { fine: false }]) {
     h.runFor(3800);
     check("recall completes before the ordinary hold ends", h.allCleared() && h.pending() === 0);
     h.click();
-    check("next story uses reading writing imagination", h.forms.map(node => node.textContent).join("") === "读写想");
+    check("second story contains only distinct vector symbols",
+        h.forms.length === 3 && h.forms.every(node => node.tag === "path" && node.d && !node.textContent)
+            && new Set(h.forms.map(node => node.d)).size === 3);
     h.runFor(TOTAL + 100);
     h.click();
-    check("third story uses book pencil moon outlines", h.forms.length === 3 && h.forms.every(node => node.tag === "path"));
+    check("third story uses book pencil moon outlines", h.forms.length === 3 && h.forms.every(node => node.tag === "path" && node.d && !node.textContent));
     h.hide();
     check("new story also cancels cleanly", h.allCleared() && h.pending() === 0);
 }

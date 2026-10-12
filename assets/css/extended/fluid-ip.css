@@ -203,12 +203,6 @@
     pointer-events: none;
 }
 
-.fluid-ip-form-text {
-    font: 700 92px system-ui, sans-serif;
-    text-anchor: middle;
-    dominant-baseline: central;
-}
-
 .fluid-ip-eye {
     fill: var(--code-bg);
 }

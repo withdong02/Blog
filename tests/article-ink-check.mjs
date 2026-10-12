@@ -26,7 +26,7 @@ function setup({ article = false, capable = true, hiddenTitle = false, hash = ''
   const root = node();
   const title = node({}, hiddenTitle ? 950 : 100);
   const mark = node();
-  const sheet = node(article ? { '.post-title': title, '.echo-article-mark': mark } : {
+  const sheet = node(article ? { '.post-title': title } : {
     '.entry-header h2': title, '.entry-link': { href: 'https://blog.test/posts/echo/' }
   });
   const articleNode = article ? node({ '.post-header': sheet }) : null;
@@ -42,7 +42,6 @@ function setup({ article = false, capable = true, hiddenTitle = false, hash = ''
   };
   if (capable) Object.assign(window, { onpageswap: null, onpagereveal: null, navigation: { activation: null } });
   vm.runInNewContext(source, { document, window, URL });
-  handlers.DOMContentLoaded();
   function transition(other, outgoing) {
     let readyResolve, readyReject, finishResolve;
     const vt = {
@@ -102,9 +101,9 @@ for (const options of [
 }
 const fallback = setup({ capable: false });
 assert.equal(fallback.handlers.pageswap, undefined);
-assert.ok(fallback.sheet.querySelector('.echo-card-mark'), 'static decoration still works');
+assert.equal(fallback.sheet.querySelector('.echo-card-mark'), null, 'card decoration is no longer cloned');
 fallback.handlers.pageshow();
-assert.equal(Object.keys(fallback.sheet.select).filter(k => k === '.echo-card-mark').length, 1);
+assert.equal(fallback.sheet.children.length, 0, 'pageshow does not create a character');
 
 for (const stop of ['pagehide', 'visibilitychange']) {
   const h = setup();
@@ -116,10 +115,6 @@ for (const stop of ['pagehide', 'visibilitychange']) {
   h.handlers.pageshow({ persisted: true });
   assert.equal(h.root.classes.size, 0, 'a restored page keeps the previous departure cleaned');
 }
-const pool = fallback.sheet.querySelector('.echo-card-mark');
-assert.equal(pool.querySelector('.fluid-mark-body').parentNode, pool.querySelector('.echo-card-goo'));
-assert.match(pool.poolMarkup, /<ellipse/);
-assert.equal(fallback.sheet.children.length, 1, 'pageshow must not duplicate the pool');
 const h = setup();
 const first = h.transition('https://blog.test/posts/echo/', false);
 const second = h.transition('https://blog.test/posts/echo/', true);

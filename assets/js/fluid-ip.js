@@ -46,19 +46,19 @@
                     light: { type: "path", value: "M0 -24 A24 24 0 1 1 0 24 A24 24 0 1 1 0 -24 Z M-4 -48 H4 V-34 H-4 Z M-4 34 H4 V48 H-4 Z M-48 -4 H-34 V4 H-48 Z M34 -4 H48 V4 H34 Z M-37 -31 L-31 -37 L-21 -27 L-27 -21 Z M21 27 L27 21 L37 31 L31 37 Z M21 -27 L31 -37 L37 -31 L27 -21 Z M-37 31 L-27 21 L-21 27 L-31 37 Z" },
                     dark: { type: "path", value: "M15 -46 C-39 -53 -63 10 -25 38 C6 62 43 34 44 10 C10 37 -24 0 15 -46 Z" }
                 } },
-                { type: "text", value: "读" },
+                { type: "path", value: "M0 40 C-12 28 -48 4 -48 -20 C-48 -48 -14 -54 0 -30 C14 -54 48 -48 48 -20 C48 4 12 28 0 40 Z" },
                 { type: "path", value: "M-45 -35 Q-22 -42 0 -25 Q22 -42 45 -35 L45 35 Q22 28 0 45 Q-22 28 -45 35 Z M-34 -23 L-34 22 Q-17 21 -6 29 L-6 -15 Q-20 -25 -34 -23 Z M6 -15 L6 29 Q17 21 34 22 L34 -23 Q20 -25 6 -15 Z", rule: "evenodd" }
             ] },
         { from: [470, 190], to: [640, 145], radius: 46,
             forms: [
-                { type: "text", value: "文" },
-                { type: "text", value: "写" },
+                { type: "path", value: "M0 -48 C6 -12 12 -6 48 0 C12 6 6 12 0 48 C-6 12 -12 6 -48 0 C-12 -6 -6 -12 0 -48 Z" },
+                { type: "path", value: "M8 -48 L-35 6 H-7 L-14 48 L35 -12 H8 Z" },
                 { type: "path", value: "M-40 40 L-32 10 L20 -42 Q26 -48 32 -42 L42 -32 Q48 -26 42 -20 L-10 32 Z M-31 29 L-17 25 L-27 15 Z", rule: "evenodd" }
             ] },
         { from: [475, 345], to: [630, 440], radius: 40,
             forms: [
-                { type: "text", value: "</>" },
-                { type: "text", value: "想" },
+                { type: "path", value: "M-22 -32 L-46 0 L-22 32 L-14 26 L-34 0 L-14 -26 Z M22 -32 L14 -26 L34 0 L14 26 L22 32 L46 0 Z M8 -42 L-18 42 H-6 L20 -42 Z" },
+                { type: "path", value: "M0 -12 C-16 -36 -48 -36 -48 0 C-48 36 -16 36 0 12 C16 36 48 36 48 0 C48 -36 16 -36 0 -12 Z M-8 0 C-20 -24 -36 -20 -36 0 C-36 20 -20 24 -8 0 Z M8 0 C20 -24 36 -20 36 0 C36 20 20 24 8 0 Z", rule: "evenodd" },
                 { type: "path", value: "M15 -46 C-39 -53 -63 10 -25 38 C6 62 43 34 44 10 C10 37 -24 0 15 -46 Z" }
             ] }
     ];
@@ -97,9 +97,8 @@
         forms = SPECS.map(function (spec, i) {
             var form = formFor(spec);
             var node = document.createElementNS(SVG_NS, form.type);
-            node.setAttribute("class", "fluid-ip-form" + (form.type === "text" ? " fluid-ip-form-text" : ""));
-            if (form.type === "text") node.textContent = form.value;
-            else node.setAttribute("d", form.value);
+            node.setAttribute("class", "fluid-ip-form");
+            node.setAttribute("d", form.value);
             node.setAttribute("fill-rule", form.rule || "nonzero");
             node.setAttribute("filter", "url(#fluid-form-soft-" + i + ")");
             node.setAttribute("opacity", "0");
@@ -240,8 +239,7 @@
             /* Starts and ends at zero size, so the blot is born from the body
                edge and dissolves into it instead of popping. */
             var size = spec.radius * Math.min(1, ease(Math.min(1, t / 0.22)), ease(Math.min(1, (1 - t) / 0.15)));
-            /* Once detached, each blot briefly takes a form. The same slot can
-               hold an SVG path or any text without changing the animation. */
+            /* Once detached, each blot briefly takes a symbol's shape. */
             var formMix = t < 0.30 ? 0 : t < 0.45 ? ease((t - 0.30) / 0.15)
                 : t < 0.66 ? 1 : t < 0.80 ? 1 - ease((t - 0.66) / 0.14) : 0;
             var stretch = 1 + 0.2 * Math.sin(Math.PI * p) + 0.07 * Math.sin(phase * 1.2);
@@ -859,10 +857,8 @@
         var blotP = document.createElementNS(SVG_NS, "path");
         blotLayer.appendChild(blotP);
         var formNode = document.createElementNS(SVG_NS, formDef.type);
-        formNode.setAttribute("class",
-            "fluid-ip-form" + (formDef.type === "text" ? " fluid-ip-form-text" : ""));
-        if (formDef.type === "text") formNode.textContent = formDef.value;
-        else formNode.setAttribute("d", formDef.value);
+        formNode.setAttribute("class", "fluid-ip-form");
+        formNode.setAttribute("d", formDef.value);
         formNode.setAttribute("fill-rule", formDef.rule || "nonzero");
         formNode.setAttribute("opacity", "0");
         formLayer.appendChild(formNode);
