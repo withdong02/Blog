@@ -109,8 +109,8 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
         ".fluid-ip-home-info .social-icons": [social],
         ".reading-tools": [tools],
         ".tools-toggle, body > #theme-toggle, body > #top-link": [toolToggle],
-        "#menu, .main > :not(.home-info), .footer": [menu],
-        "#menu, .main > :not(.home-info), .footer, .logo > a": [menu, homeLink]
+        "#menu, .journal-home > :not(.home-info), .footer": [menu],
+        "#menu, .journal-home > :not(.home-info), .footer, .logo > a": [menu, homeLink]
     };
     const root = {
         classList: {

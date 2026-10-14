@@ -4,6 +4,7 @@
 {{- $paginator := .Paginate $pages -}}
 <div class="journal-home" id="articles">
   {{- if eq $paginator.PageNumber 1 }}
+  <div id="fluid-portal" class="fluid-portal" role="region" aria-label="博客入口"></div>
   {{ partial "home_info.html" . }}
   {{- else }}
   <header class="journal-page-heading"><h1>文章列表</h1><p>第 {{ $paginator.PageNumber }} 页，共 {{ $paginator.TotalPages }} 页</p></header>

@@ -4,7 +4,7 @@
 .main:has(.journal-home .echo-atlas) { max-width: calc(840px + var(--gap) * 2); }
 .journal-home { scroll-margin-top: 24px; }
 .journal-home > .home-info { max-width: none; min-height: 300px; margin: 32px 0 56px; text-align: left; }
-.journal-home > .home-info > :not(.fluid-ip-orb) { padding-inline-start: clamp(24px, 4vw, 48px); }
+.journal-home > .home-info > :not(.fluid-ip-orb):not(.fluid-ip-dock) { padding-inline-start: clamp(24px, 4vw, 48px); }
 .journal-home > .home-info h1 { font-size: 32px; line-height: 1.4; }
 .journal-home > .home-info .entry-content { font-size: 15px; line-height: 1.8; }
 .journal-page-heading { margin: 24px 0 40px; }
@@ -37,9 +37,9 @@
 .echo-article .toc { border-radius: 12px; }
 @media (min-width: 900px) {
     .journal-home > .home-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 64px; row-gap: 16px; align-content: center; padding-right: 0; }
-    .journal-home > .home-info > :not(.fluid-ip-orb) { grid-column: 1; }
+    .journal-home > .home-info > :not(.fluid-ip-orb):not(.fluid-ip-dock) { grid-column: 1; }
     /* Center the visible body, compensating for the SVG's asymmetric reserve. */
-    .journal-home > .home-info .fluid-ip-orb { position: relative; grid-column: 2; grid-row: 1 / 4; justify-self: center; align-self: center; left: auto; right: auto; top: auto; width: 260px; margin: 0; transform: translate(11.25%, -6.5%); }
+    .journal-home > .home-info .fluid-ip-orb, .journal-home > .home-info .fluid-ip-dock { position: relative; grid-column: 2; grid-row: 1 / 4; justify-self: center; align-self: center; left: auto; right: auto; top: auto; width: 260px; margin: 0; transform: translate(11.25%, -6.5%); }
 }
 @media (max-width: 899px) {
     .journal-home > .home-info { min-height: 0; margin: 24px 0 40px; }

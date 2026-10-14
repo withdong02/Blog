@@ -11,7 +11,7 @@
     }
     function enter() {
         stop();
-        if (document.hidden || reduced.matches || document.documentElement.classList.contains("echo-article-returning")) return;
+        if (document.hidden || reduced.matches || document.documentElement.classList.contains("echo-article-returning") || document.documentElement.classList.contains("fluid-portal-active")) return;
         var beats = [
             [".home-info", { opacity: .6 }, 700, 0],
             [".echo-atlas", { opacity: .7 }, 700, 70]

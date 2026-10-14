@@ -112,7 +112,7 @@
             ".tools-toggle, body > #theme-toggle, body > #top-link"
         ];
         // Reading content only fades in: no card movement.
-        var QUIET = "#menu, .main > :not(.home-info), .footer";
+        var QUIET = "#menu, .journal-home > :not(.home-info), .footer";
         // Painted body: centre and radius in SVG units; blot radius likewise.
         var BODY = [256, 250];
         var BODY_R = 250;

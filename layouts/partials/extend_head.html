@@ -1,4 +1,8 @@
-{{- /* The journal opens directly; the former character entrance stays on disk. */ -}}
+{{- /* Set the entrance state before first paint; pagination skips it by path. */ -}}
+{{- if .IsHome }}
+{{- $transition := resources.Get "js/fluid-transition.js" | minify | fingerprint "sha256" }}
+<script src="{{ $transition.RelPermalink }}" integrity="{{ $transition.Data.Integrity }}" data-home-path="{{ site.Home.RelPermalink }}"></script>
+{{- end }}
 {{- /* pagereveal must be registered before the first rendering opportunity. */ -}}
 {{- $articleInk := resources.Get "js/article-ink.js" | minify | fingerprint "sha256" }}
 {{- with site.GetPage "/posts" }}
