@@ -53,6 +53,7 @@ for (const file of files) {
   assert.match(html, /class=journal-home id=articles/);
   assert.equal((html.match(/<h1\b/g) || []).length, 1);
   if (file === 'index.html') {
+    assert.match(html, /👋/, 'the configured wave greeting is preserved');
     assert.match(html, /id=fluid-portal class=fluid-portal/, 'the root homepage renders its entrance');
     assert.equal((html.match(/id=fluid-portal\b/g) || []).length, 1);
   } else {
@@ -86,5 +87,5 @@ for (const file of ['taxonomies/index.html', 'posts/echo/index.html']) {
 }
 const styles = readFileSync(new URL('../assets/css/extended/journal.css', import.meta.url), 'utf8');
 assert.doesNotMatch(styles, /#[\da-f]{3,8}\b|\b(?:rgb|hsl)a?\(/i, 'interface styling uses the existing neutral theme colors');
-assert.match(styles, /\.logo \.fluid-mark\s*\{\s*display:\s*none/, 'home navigation displays text without the character');
+assert.doesNotMatch(styles, /\.logo \.fluid-mark\s*\{\s*display:\s*none/, 'the shared home mark is visible');
 console.log(`journal checks passed: ${all.length} unique articles, neutral cards, entrance wiring, pagination, fallback and finite motion cleanup`);

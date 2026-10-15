@@ -1,6 +1,5 @@
 /* Compact reading cards, with one guide traveling through their shared gutter. */
 :root { --nav-width: 840px; }
-.logo .fluid-mark { display: none; }
 .main:has(.journal-home .echo-atlas) { max-width: calc(840px + var(--gap) * 2); }
 .journal-home { scroll-margin-top: 24px; }
 .journal-home > .home-info { max-width: none; min-height: 300px; margin: 32px 0 56px; text-align: left; }

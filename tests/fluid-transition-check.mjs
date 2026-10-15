@@ -13,7 +13,7 @@ const RECALL = +source.match(/RECALL = (\d+)/)[1];
 
 /* A tiny DOM: a real parent/child tree, so "left nothing behind" means every
    node the scene created is detached again. rAF is a manual clock. */
-function harness({ path = "/", hash = "", reduced = true, wide = true, fine = true, ink = true } = {}) {
+function harness({ path = "/", hash = "", reduced = true, wide = true, fine = true, ink = true, ready = false } = {}) {
     const classes = new Set();
     const handlers = {};
     const created = [];
@@ -77,6 +77,8 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
     const main = body.appendChild(node("main"));
     const home = main.appendChild(node("div"));
     const orb = home.appendChild(node("div", { rect: { left: 100, top: 100, width: 300, height: 250 } }));
+    orb.disabled = true;
+    orb.attrs['aria-label'] = 'static Echo';
     const svg = orb.appendChild(node("svg", { getScreenCTM: () => ({ a: 0.6, b: 0, c: 0, d: 0.6, e: 100, f: 100 }) }));
     const defs = svg.appendChild(node("defs"));
     const goo = defs.appendChild(node("filter"));
@@ -93,6 +95,10 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
     const title = text(80, 120, 360, 40, "32px");
     const intro = text(80, 170, 380, 22, "16px");
     const social = text(80, 205, 120, 30, "16px");
+    social.computed.color = 'rgb(108, 108, 108)';
+    const socialLinks = [0, 1, 2].map(i => social.appendChild(node('a', {
+        rect: { left: 80 + i * 45, top: 205, width: 24, height: 24 }, computed: { color: 'rgb(30, 30, 30)' }
+    })));
     const homeLink = text(20, 10, 90, 30, "24px");
     const tools = body.appendChild(node("div"));
     const toolToggle = tools.appendChild(node("button", { rect: { left: 1300, top: 620, width: 44, height: 44 }, computed: { backgroundColor: "rgb(214, 214, 214)" } }));
@@ -100,17 +106,25 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
     const top = control(1300, 670);
     tools.appendChild(toggle);
     tools.appendChild(top);
-    const menu = main.appendChild(node("ul"));
-    const targets = [title, intro, social, homeLink, toolToggle];
+    const menu = main.appendChild(node("ul", { rect: { left: 600, top: 10, width: 500, height: 30 } }));
+    const card = text(80, 420, 380, 240, "16px");
+    card.computed.backgroundColor = "rgb(255, 255, 255)";
+    const offscreen = text(80, 900, 380, 240, "16px");
+    const guide = main.appendChild(node("span", { hidden: true, rect: { left: 485, top: 462, width: 28, height: 28 } }));
+    const trail = main.appendChild(node("path", { getTotalLength: () => 1500 }));
+    const targets = [title, intro, ...socialLinks, homeLink, toolToggle];
     const select = {
         ".logo > a": [homeLink],
         ".fluid-ip-home-info > .entry-header": [title],
         ".fluid-ip-home-info > .entry-content": [intro],
-        ".fluid-ip-home-info .social-icons": [social],
+        ".fluid-ip-home-info .social-icons a": socialLinks,
         ".reading-tools": [tools],
         ".tools-toggle, body > #theme-toggle, body > #top-link": [toolToggle],
-        "#menu, .journal-home > :not(.home-info), .footer": [menu],
-        "#menu, .journal-home > :not(.home-info), .footer, .logo > a": [menu, homeLink]
+        "#menu > li": [menu],
+        ".echo-atlas-islands > .post-entry": [card, offscreen],
+        ".echo-atlas-guide": [guide],
+        ".echo-atlas-trail": [trail],
+        ".journal-pagination, .footer": []
     };
     const root = {
         classList: {
@@ -151,7 +165,8 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
         cancelAnimationFrame(id) { frames.delete(id); },
         history: { pushState(_state, _unused, value) { window.location.hash = value.startsWith("#") ? value : ""; } }
     };
-    const context = vm.createContext({ document, window, requestAnimationFrame: fn => window.requestAnimationFrame(fn), Event: class Event {}, NodeFilter: { SHOW_ELEMENT: 1, SHOW_TEXT: 4 } });
+    if (ready) window.EchoReady = { done: false };
+    const context = vm.createContext({ document, window, Promise, requestAnimationFrame: fn => window.requestAnimationFrame(fn), Event: class Event {}, NodeFilter: { SHOW_ELEMENT: 1, SHOW_TEXT: 4 } });
     if (ink) vm.runInContext(inkSource, context);
     if (ink) {
         const blob = window.FluidInk.blob;
@@ -164,7 +179,7 @@ function harness({ path = "/", hash = "", reduced = true, wide = true, fine = tr
         frames.clear();
         due.forEach(fn => fn(now));
     }
-    return { root, orb, portal, home, main, menu, tools, toggle, top, blotLayer, window, document, handlers, eyes, targets, homeLink, created, frames, tick, shapes, writes: () => writes };
+    return { root, orb, portal, home, main, menu, card, offscreen, guide, trail, tools, toggle, top, blotLayer, window, document, handlers, eyes, targets, homeLink, created, frames, tick, shapes, writes: () => writes };
 }
 
 // Everything a scene touched is back as it was, and no frame is pending.
@@ -173,7 +188,7 @@ function assertClean(h) {
     assert.equal(h.root.classList.contains("fluid-composing"), false);
     assert.equal(h.orb.style.transform, "");
     assert.equal(h.portal.style.backgroundColor, "");
-    for (const n of [...h.targets, h.menu]) {
+    for (const n of [...h.targets, h.menu, h.card, h.guide]) {
         assert.ok(!n.style.opacity && !n.style.filter);
     }
     assert.deepEqual(h.created.filter(n => n.isConnected).map(n => n.tagName), []);
@@ -197,12 +212,14 @@ function snap(h) {
     assert.equal(h.root.classList.contains("fluid-portal-active"), true);
     h.handlers.DOMContentLoaded();
     assert.equal(h.orb.parentNode, h.portal);
+    assert.equal(h.orb.disabled, false, 'the entrance works even if fluid-ip failed to load');
     assert.equal(h.main.inert, true);
     h.orb.handlers.click();
     h.tick(0);
     h.tick(2000);
     assert.equal(h.window.location.hash, "#articles");
     assert.equal(h.orb.parentNode, h.home);
+    assert.equal(h.orb.disabled, true, 'missing character enhancement leaves a static, unfocusable figure');
     assert.equal(h.main.inert, false);
     assert.equal(h.main.focused, true);
     h.window.location.hash = "";
@@ -246,7 +263,7 @@ console.log("fluid entrance checks passed");
         if (ms === ENTER / 2) {
             assert.ok(h.targets.every(t => t.style.filter), "every target waits as melted ink");
             assert.ok(h.created.some(n => n.tagName === "path" && n.isConnected && n.attrs.d), "blots are in flight");
-            assert.ok(+h.menu.style.opacity > 0 && +h.menu.style.opacity < 1, "reading content fades in");
+            assert.equal(h.menu.style.opacity, '0.000', 'menu waits for its ink to land');
         }
     }
     h.orb.handlers.click();
@@ -317,7 +334,7 @@ for (const options of [{ wide: false }, { fine: false }, { ink: false }]) {
         assert.ok(h.shapes.length > 0, 'mobile entrance visibly separates ink');
         assert.ok(h.targets.slice(0, 3).every(t => t.style.filter), 'intro is revealed through ink');
         assert.ok(h.targets.slice(4).every(t => t.style.filter), 'mobile tool button is revealed through ink');
-        assert.ok(h.menu.style.opacity !== undefined, 'mobile navigation participates in fade');
+        assert.ok(h.menu.style.opacity !== undefined, 'mobile navigation participates in ink handoff');
         assert.ok(!h.toggle.style.filter && !h.top.style.filter, 'hidden child controls are not ink targets');
         h.tick(950);
         assert.ok(h.shapes.length > 0, 'fourth ink flight remains visible before landing');
@@ -362,6 +379,60 @@ console.log("compact entrances animate and clean up");
     assertClean(h);
 }
 console.log("release velocity, soft landing and unchanged-attribute checks passed");
+
+// First-viewport paper and guide are ink targets; offscreen paper stays static.
+{
+    const h = harness(); h.handlers.DOMContentLoaded(); h.orb.handlers.click(); h.tick(0);
+    assert.equal(h.card.style.opacity, '0.000');
+    assert.ok(h.guide.style.filter && h.menu.style.filter);
+    assert.ok(!h.card.style.filter, 'the full card content is not rasterized through the SVG filter');
+    assert.equal(h.offscreen.style.opacity, undefined);
+    assert.equal(h.trail.style.strokeDasharray, '0.00 1500');
+    h.tick(ENTER * 0.8);
+    const drawn = parseFloat(h.trail.style.strokeDasharray);
+    assert.ok(drawn > 0 && drawn < 1500, 'route grows out from its ink seed');
+    h.tick(ENTER); assertClean(h);
+    assert.equal(h.trail.style.strokeDasharray, '');
+    assert.equal(h.trail.style.strokeDashoffset, '');
+}
+for (const interrupt of [false, 'resize', 'pagehide', 'visibilitychange', 'hashchange']) {
+    const h = harness({ ready: true }); h.handlers.DOMContentLoaded();
+    const preparation = h.window.EchoReady.prepare();
+    if (interrupt) {
+        if (interrupt === 'visibilitychange') h.document.hidden = true;
+        h.handlers[interrupt]();
+        await preparation; assertClean(h);
+    } else {
+        h.tick(0); h.tick(16); await preparation;
+        assert.equal(h.frames.size, 0, 'preparation stops after two paints');
+        const count = h.created.length;
+        h.window.EchoReady.done = true; h.orb.handlers.click();
+        assert.equal(h.created.length, count, 'first click reuses the prepared scene');
+        h.tick(20); h.tick(20 + ENTER); assertClean(h);
+    }
+}
+console.log('Paper, guide, route and first-click preparation checks passed');
+
+{
+    const h = harness(); h.handlers.DOMContentLoaded(); h.orb.handlers.click(); h.tick(0);
+    const socialPaths = h.created.filter(n => n.tagName === 'path').slice(2, 5);
+    for (const t of [0.30, 0.42, 0.59, 0.68]) {
+        h.tick(t * ENTER);
+        assert.ok(socialPaths.every(path => path.style.fill === 'rgb(30,30,30)'), 'social ink never picks up the gray container color');
+    }
+    h.tick(ENTER); assertClean(h);
+}
+{
+    const h = harness({ fine: false }); h.handlers.DOMContentLoaded(); h.orb.handlers.click(); h.tick(0);
+    const paths = h.created.filter(n => n.tagName === 'path');
+    h.tick(600);
+    assert.ok(paths[0].attrs.d && paths[1].attrs.d && paths[0].attrs.d !== paths[1].attrs.d, 'mobile intro restores separate original blots');
+    h.tick(880);
+    const traveling = h.orb.style.transform;
+    h.tick(1030);
+    assert.notEqual(h.orb.style.transform, traveling, 'mobile body restores its original travel timing');
+    h.tick(2000); assertClean(h);
+}
 
 {
     const h = harness({ reduced: true });

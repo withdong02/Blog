@@ -2,7 +2,7 @@
    Project override of themes/PaperMod/layouts/partials/home_info.html.
 
    The 回声 (Echo) figure joins the intro.
-   Title follows configuration with the decorative wave removed; content and
+   Title follows configuration including the greeting; content and
    social icons follow the theme, so keep this file in
    sync when the theme partial changes.
 
@@ -27,7 +27,7 @@
 {{- with site.Params.homeInfoParams }}
 <article class="first-entry home-info fluid-ip-home-info">
     <header class="entry-header">
-        <h1>{{ replace .Title "👋" "" | markdownify }}</h1>
+        <h1>{{ .Title | markdownify }}</h1>
     </header>
     <div class="entry-content md-content">
         {{ $opts := dict "display" "block" }}

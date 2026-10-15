@@ -20,6 +20,8 @@
         }
 
         var home = orb.parentNode;
+        var articleDisabled = orb.disabled;
+        var articleLabel = orb.getAttribute("aria-label");
         var dock = document.createElement("span");
         dock.className = "fluid-ip-dock";
         dock.setAttribute("aria-hidden", "true");
@@ -31,6 +33,7 @@
         var closed = false;
         var entering = false;
         var endScene = null;
+        var prepared = null, prepRaf = 0, endPrep = null;
         var wide = window.matchMedia("(min-width: 600px)");
 
         function setInert(value) {
@@ -51,6 +54,8 @@
             root.classList.add("fluid-portal-active");
             dock.hidden = false;
             portal.appendChild(orb);
+            orb.disabled = false;
+            orb.setAttribute("aria-label", "进入文章列表");
             setInert(true);
             window.scrollTo(0, 0);
             window.dispatchEvent(new Event("fluid-portal-change"));
@@ -61,6 +66,8 @@
             root.classList.remove("fluid-portal-active");
             dock.hidden = true;
             home.insertBefore(orb, dock.nextSibling);
+            orb.disabled = articleDisabled;
+            orb.setAttribute("aria-label", articleLabel);
             orb.style.translate = "";
             setInert(false);
             window.dispatchEvent(new Event("fluid-portal-change"));
@@ -77,7 +84,7 @@
         }
         var lookRaf = 0;
         window.addEventListener("pointermove", function (event) {
-            if (!fine.matches || entering) return;
+            if (!fine.matches || entering || window.EchoReady && !window.EchoReady.done) return;
             var cx = event.clientX, cy = event.clientY;
             if (lookRaf) return;
             lookRaf = requestAnimationFrame(function () {
@@ -107,12 +114,14 @@
         var TARGETS = [
             ".fluid-ip-home-info > .entry-header",
             ".fluid-ip-home-info > .entry-content",
-            ".fluid-ip-home-info .social-icons",
+            ".fluid-ip-home-info .social-icons a",
             ".logo > a",
-            ".tools-toggle, body > #theme-toggle, body > #top-link"
+            ".tools-toggle, body > #theme-toggle, body > #top-link",
+            "#menu > li",
+            ".echo-atlas-guide"
         ];
         // Reading content only fades in: no card movement.
-        var QUIET = "#menu, .journal-home > :not(.home-info), .footer";
+        var QUIET = ".journal-pagination, .footer";
         // Painted body: centre and radius in SVG units; blot radius likewise.
         var BODY = [256, 250];
         var BODY_R = 250;
@@ -140,6 +149,12 @@
             var blotLayer = orb.querySelector(".fluid-ip-blots");
             var formLayer = orb.querySelector(".fluid-ip-forms");
             var goo = svg.querySelector("#fluid-ip-goo");
+            var guide = document.querySelector(".echo-atlas-guide");
+            var trail = document.querySelector(".echo-atlas-trail");
+            if (guide) guide.hidden = false;
+            var routeLength = trail && trail.getTotalLength ? trail.getTotalLength() : 0;
+            var routeStart = guide ? parseFloat(window.getComputedStyle(guide).offsetDistance) || 42 : 42;
+            var routeBorn = 0.64;
 
             orb.style.transform = "";
             var from = orb.getBoundingClientRect();
@@ -216,26 +231,33 @@
             var primary = rgb(window.getComputedStyle(orb).color);
             var bodyCentre = toScreen0(BODY);
             var blots = [];
-            (compact ? TARGETS.slice(0, 3).concat(TARGETS[4]) : TARGETS).forEach(function (selector) {
+            var groups = TARGETS.map(function (selector) { return { selector: selector, elements: document.querySelectorAll(selector) }; });
+            Array.prototype.forEach.call(document.querySelectorAll(".echo-atlas-islands > .post-entry"), function (card) {
+                groups.push({ selector: ".post-entry", elements: [card] });
+            });
+            groups.forEach(function (group) {
                 var nodes = [];
-                Array.prototype.forEach.call(document.querySelectorAll(selector), function (el) {
+                Array.prototype.forEach.call(group.elements, function (el) {
                     var box = el.getBoundingClientRect();
                     if (!box.width || !box.height || box.top >= window.innerHeight || box.bottom <= 0) return;
                     var style = window.getComputedStyle(el);
                     var fill = rgb(style.backgroundColor);
                     // A filled control melts into its own disc; text into the
                     // band its glyphs actually cover.
-                    var solid = fill[3] > 0;
+                    var solid = fill[3] > 0 || group.selector === ".echo-atlas-guide";
                     var r = solid ? box : Ink.inkRect(el);
-                    var melt = Ink.melt(el, { solid: solid });
+                    // The landed SVG ink blankets the paper; filtering its entire HTML stalled entry.
+                    var paper = group.selector === ".post-entry";
+                    var melt = paper ? null : Ink.melt(el, { solid: solid });
+                    var grow = melt ? melt.grow : 0;
                     nodes.push({
                         el: el,
                         solid: solid,
-                        color: solid ? fill : rgb(style.color),
+                        color: fill[3] > 0 ? fill : rgb(style.color),
                         x: r.left + r.width / 2,
                         y: r.top + r.height / 2,
-                        rx: r.width / 2 + melt.grow,
-                        ry: solid ? r.height / 2 : r.height * 0.4 + melt.grow * 0.6,
+                        rx: r.width / 2 + grow,
+                        ry: solid ? r.height / 2 : r.height * 0.4 + grow * 0.6,
                         melt: melt
                     });
                 });
@@ -252,9 +274,10 @@
                 var dir = [dx / len, dy / len];
                 var e = {
                     nodes: nodes,
+                    paper: group.selector === ".post-entry",
                     dir: dir,
                     T: T,
-                    b: compact ? 0.14 + 0.065 * i : 0.03 + 0.03 * i,
+                    b: compact ? Math.min(0.33, 0.14 + 0.065 * i) : group.selector === ".echo-atlas-guide" ? 0.05 : Math.min(0.16, 0.03 + 0.03 * i),
                     phase: i * 1.7,
                     u0: [BODY[0] + dir[0] * BODY_R * 0.55, BODY[1] + dir[1] * BODY_R * 0.55],
                     u1: [BODY[0] + dir[0] * (BODY_R + BLOT_R * 1.25), BODY[1] + dir[1] * (BODY_R + BLOT_R * 1.25)],
@@ -263,6 +286,7 @@
                 e.r = e.b + 0.11;
                 e.l = e.r + (compact ? 0.25 : 0.38);
                 e.s = e.l + (compact ? 0.08 : 0.10);
+                if (!compact && group.selector === ".echo-atlas-guide") routeBorn = e.s;
                 var release = bodyAt(e.r);
                 e.P = release.toScreen(e.u1);
                 // The released ink retains the body's velocity. Starting a
@@ -286,7 +310,7 @@
                Distant groups stay apart to keep each filter region small. */
             var clusters = [];
             blots.slice().sort(function (a, b) { return a.angle - b.angle; }).forEach(function (e, i, sorted) {
-                if (!i || e.angle - sorted[i - 1].angle > 1.05) {
+                if (!i || e.paper || sorted[i - 1].paper || e.angle - sorted[i - 1].angle > 1.05) {
                     var filter = goo.cloneNode(true);
                     filter.setAttribute("id", "fluid-blot-goo-" + clusters.length);
                     goo.parentNode.appendChild(filter);
@@ -297,7 +321,7 @@
                 }
                 e.cluster = clusters[clusters.length - 1];
             });
-            var quiet = document.querySelectorAll(QUIET + (compact ? ', .logo > a' : ''));
+            var quiet = document.querySelectorAll(QUIET);
             var portalFill = rgb(window.getComputedStyle(portal).backgroundColor);
             var lastLook = "";
 
@@ -402,8 +426,9 @@
                    puts visible steps into the reveal. Not worth it: the reveal
                    stays continuous and leans on the compositor hint instead. */
                 e.nodes.forEach(function (n) {
-                    if (n.el.style.opacity !== opacity) n.el.style.opacity = opacity;
-                    n.melt.set(m);
+                    var visibility = n.melt ? opacity : t >= e.s ? "1.000" : "0.000";
+                    if (n.el.style.opacity !== visibility) n.el.style.opacity = visibility;
+                    if (n.melt) n.melt.set(m);
                 });
             }
 
@@ -420,6 +445,11 @@
                 Array.prototype.forEach.call(quiet, function (node) {
                     if (node.style.opacity !== fade) node.style.opacity = fade;
                 });
+                if (routeLength) {
+                    var drawn = smooth((t - routeBorn) / (0.94 - routeBorn));
+                    trail.style.strokeDasharray = (routeLength * drawn).toFixed(2) + " " + routeLength;
+                    trail.style.strokeDashoffset = (-routeStart * (1 - drawn)).toFixed(2);
+                }
                 clusters.forEach(function (c) {
                     c.box = [Infinity, Infinity, -Infinity, -Infinity];
                 });
@@ -458,6 +488,8 @@
             function clear() {
                 orb.style.transform = "";
                 portal.style.backgroundColor = "";
+                if (trail) { trail.style.strokeDasharray = ""; trail.style.strokeDashoffset = ""; }
+                if (guide) guide.hidden = root.classList.contains("fluid-portal-active");
                 Array.prototype.forEach.call(quiet, function (node) {
                     node.style.opacity = "";
                 });
@@ -468,7 +500,7 @@
                 blots.forEach(function (e) {
                     e.paths.forEach(function (path) { path.remove(); });
                     e.nodes.forEach(function (n) {
-                        n.melt.remove();
+                        if (n.melt) n.melt.remove();
                         n.el.style.opacity = "";
                     });
                 });
@@ -477,6 +509,40 @@
 
             return { render: render, clear: clear };
         }
+
+        function clearPrepared() {
+            if (lookRaf) window.cancelAnimationFrame(lookRaf);
+            lookRaf = 0;
+            if (prepRaf) window.cancelAnimationFrame(prepRaf);
+            prepRaf = 0;
+            if (prepared) prepared.clear();
+            prepared = null;
+            if (endPrep) { endPrep(); endPrep = null; }
+            if (!entering) root.classList.remove("fluid-composing");
+        }
+        if (window.EchoReady) window.EchoReady.cancelPrepare = clearPrepared;
+        if (window.EchoReady) window.EchoReady.prepare = function () {
+            if (!root.classList.contains("fluid-portal-active") || !window.FluidInk || !window.requestAnimationFrame || document.hidden) return;
+            return new Promise(function (resolve) {
+                endPrep = resolve;
+                root.classList.add("fluid-composing");
+                try {
+                    prepared = buildScene(!wide.matches || !fine.matches);
+                    // Paint the costly handoff behind the loading surface, then rewind.
+                    prepared.render(0.72);
+                    prepRaf = window.requestAnimationFrame(function () {
+                        prepared.render(0.88);
+                        prepRaf = window.requestAnimationFrame(function () {
+                            prepRaf = 0;
+                            prepared.render(0);
+                            root.classList.remove("fluid-composing");
+                            endPrep = null;
+                            resolve();
+                        });
+                    });
+                } catch (_) { clearPrepared(); }
+            });
+        };
 
         // Capability fallback: keep entrance movement when FluidInk is unavailable.
         function buildCompactScene() {
@@ -540,7 +606,10 @@
 
             root.classList.add("fluid-composing");
             var compact = !wide.matches || !fine.matches || !window.FluidInk;
-            scene = window.FluidInk ? buildScene(compact) : buildCompactScene();
+            try {
+                scene = prepared || (window.FluidInk ? buildScene(compact) : buildCompactScene());
+                prepared = null;
+            } catch (_) { complete(true); return; }
             var duration = compact && window.FluidInk ? (reverse ? 1600 : 2000) : compact ? (reverse ? 650 : 850) : (reverse ? RECALL : ENTER);
             var start = null;
             function frame(now) {
@@ -568,14 +637,20 @@
             if (!root.classList.contains("fluid-portal-active")) composePage(true);
         });
         function settle() {
+            clearPrepared();
             if (endScene) endScene(true);
         }
         window.addEventListener("resize", settle);
+        window.addEventListener("pagehide", settle);
+        if (window.MutationObserver) new window.MutationObserver(function () {
+            if (!entering) clearPrepared();
+        }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
         document.addEventListener("visibilitychange", function () {
             if (document.hidden) settle();
         });
 
         function syncLocation() {
+            clearPrepared();
             if (endScene) endScene(false);
             if (window.location.hash) showArticles();
             else showPortal();

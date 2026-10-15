@@ -1,0 +1,37 @@
+/* CSS rings run only while the readiness surface is visible. */
+.echo-loader { display: none; }
+.echo-loading { overflow: hidden; }
+.echo-loading .echo-loader {
+    display: grid;
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    place-content: center;
+    justify-items: center;
+    background: var(--theme);
+    background: color-mix(in srgb, var(--theme) 99.8%, transparent);
+    color: #000;
+}
+.list .echo-loader { background: var(--code-bg); background: color-mix(in srgb, var(--code-bg) 99.8%, transparent); }
+:root[data-theme="dark"] .echo-loader { background: var(--theme); background: color-mix(in srgb, var(--theme) 99.8%, transparent); color: #fff; }
+.loading-27 {
+    width: 60px;
+    height: 25px;
+    border: 2px solid;
+    box-sizing: border-box;
+    border-radius: 50%;
+    display: grid;
+    animation: loading-27 2s infinite linear;
+}
+.loading-27::before, .loading-27::after {
+    content: "";
+    grid-area: 1/1;
+    border: inherit;
+    border-radius: 50%;
+    animation: inherit;
+    animation-duration: 3s;
+}
+.loading-27::after { --s: -1; }
+@keyframes loading-27 {
+    100% { transform: rotate(calc(var(--s, 1) * 1turn)); }
+}

@@ -31,6 +31,7 @@
 <body id="top">
 {{- end }}
     <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
+    {{ partial "page_loader.html" . }}
     {{ partialCached "header.html" . .Page -}}
     <main class="main" id="main" tabindex="-1">
         {{- block "main" . }}{{ end }}

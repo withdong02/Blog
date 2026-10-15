@@ -1,3 +1,6 @@
+{{- /* A bounded first-paint gate; cross-document paper transitions bypass it. */ -}}
+{{- $ready := resources.Get "js/page-ready.js" | minify | fingerprint "sha256" }}
+<script src="{{ $ready.RelPermalink }}" integrity="{{ $ready.Data.Integrity }}"></script>
 {{- /* Set the entrance state before first paint; pagination skips it by path. */ -}}
 {{- if .IsHome }}
 {{- $transition := resources.Get "js/fluid-transition.js" | minify | fingerprint "sha256" }}
