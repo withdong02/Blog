@@ -68,6 +68,16 @@ for (const file of files) {
   assert.doesNotMatch(html, /journal-featured|journal-feature-date|journal-directory-title/, 'no oversized feature panel or extra index headline');
   assert.match(html, /\/js\/journal\./);
   assert.ok(links(html).length > 0);
+  const pageNumber = Number(file.match(/^page\/(\d+)\//)?.[1] || 1);
+  const pagination = html.match(/<nav\b[^>]*class=["']?journal-pagination\b[^>]*>(.*?)<\/nav>/s)?.[1] || '';
+  const pageLinks = [...pagination.matchAll(/<a\b[^>]*href=(?:"([^"]+)"|([^\s>]+))[^>]*>(.*?)<\/a>/gs)];
+  if (pageNumber > 1) {
+    const previous = pageLinks.find(match => match[3].includes('上一页'));
+    assert.ok(previous, `${file}: previous page is reachable`);
+    const url = new URL(previous[1] || previous[2], 'https://blog.test');
+    const expected = pageNumber === 2 ? '/#articles' : `/page/${pageNumber - 1}/`;
+    assert.equal(url.pathname + url.hash, expected, `${file}: return to the list, not the entrance`);
+  }
   all.push(...links(html));
 }
 assert.equal(new Set(all).size, all.length, 'article cards are not duplicated across pagination');

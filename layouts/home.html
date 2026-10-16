@@ -31,7 +31,11 @@
   </section>
   {{- if gt $paginator.TotalPages 1 }}
   <nav class="journal-pagination" aria-label="文章分页">
-    {{- if $paginator.HasPrev }}<a href="{{ $paginator.Prev.URL | absURL }}">← 上一页</a>{{- else }}<span></span>{{- end }}
+    {{- if $paginator.HasPrev }}
+    {{- $prevURL := $paginator.Prev.URL | absURL -}}
+    {{- if eq $paginator.Prev.PageNumber 1 }}{{ $prevURL = printf "%s#articles" $prevURL }}{{ end -}}
+    <a href="{{ $prevURL }}">← 上一页</a>
+    {{- else }}<span></span>{{- end }}
     <span>{{ printf "%02d" $paginator.PageNumber }} / {{ printf "%02d" $paginator.TotalPages }}</span>
     {{- if $paginator.HasNext }}<a href="{{ $paginator.Next.URL | absURL }}">下一页 →</a>{{- else }}<span></span>{{- end }}
   </nav>
