@@ -96,6 +96,9 @@ for (const file of ['taxonomies/index.html', 'posts/echo/index.html']) {
   assert.doesNotMatch(html, /echo-article-mark|fluid-signoff-figure|\/js\/fluid-read\./, 'reading has no repeated character');
 }
 const styles = readFileSync(new URL('../assets/css/extended/journal.css', import.meta.url), 'utf8');
+assert.match(styles, /\.post-entry:nth-child\(even\)\s*\{\s*margin-top:\s*112px/, 'right-column cards visibly follow the left in time order');
+assert.doesNotMatch(styles, /\.post-entry:nth-child\(2\)/, 'the first pair follows the same stagger as later cards');
+assert.match(styles, /@media \(max-width: 799px\)[\s\S]*\.post-entry:nth-child\(even\)\s*\{\s*margin-top:\s*0;/, 'single-column cards retain their natural spacing');
 assert.doesNotMatch(styles, /#[\da-f]{3,8}\b|\b(?:rgb|hsl)a?\(/i, 'interface styling uses the existing neutral theme colors');
 assert.doesNotMatch(styles, /\.logo \.fluid-mark\s*\{\s*display:\s*none/, 'the shared home mark is visible');
 console.log(`journal checks passed: ${all.length} unique articles, neutral cards, entrance wiring, pagination, fallback and finite motion cleanup`);

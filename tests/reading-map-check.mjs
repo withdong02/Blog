@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import vm from 'node:vm';
 
 const source = readFileSync(new URL('../assets/js/reading-map.js', import.meta.url), 'utf8');
-function setup({ capable = true, narrow = false, portal = false, gap = 64, tops = [0, 36, 300, 336, 670, 706] } = {}) {
+function setup({ capable = true, narrow = false, portal = false, gap = 64, tops = [0, 112, 300, 412, 600, 712] } = {}) {
   const handlers = {}, frames = new Map(), flights = [];
   let nextFrame = 0, computedDistance = '0px';
   function node() {

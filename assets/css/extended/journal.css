@@ -18,8 +18,7 @@
 .journal-home .echo-atlas { margin-bottom: 40px; }
 .journal-home .echo-atlas-islands { column-gap: 64px; row-gap: 28px; padding-left: 0; }
 .journal-home .echo-atlas-islands > .post-entry { padding: 26px 26px 24px; border-radius: 28px 44px 30px 38px / 36px 30px 40px 28px; }
-.journal-home .echo-atlas-islands > .post-entry:nth-child(even) { margin-top: 36px; border-radius: 40px 28px 42px 30px / 28px 38px 30px 36px; }
-.journal-home .echo-atlas-islands > .post-entry:nth-child(2) { margin-top: 0; }
+.journal-home .echo-atlas-islands > .post-entry:nth-child(even) { margin-top: 112px; border-radius: 40px 28px 42px 30px / 28px 38px 30px 36px; }
 .journal-home .echo-atlas-islands .entry-header h2 { font-size: 23px; }
 .journal-home .echo-atlas-islands .entry-content { margin: 12px 0 18px; font-size: 14px; }
 .journal-home .entry-footer, .journal-home .echo-atlas-topic { padding-right: 0; }
